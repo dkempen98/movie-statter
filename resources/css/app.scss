@@ -1,0 +1,284 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #2e2e2e;
+  --grid: #adadad;
+  --highlight: #ddbf88;
+  --search: #310202;
+  --size: 50px;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel&display=swap');
+
+body {
+  color: white;
+}
+
+ul, li {
+  list-style: none;
+}
+
+h1,
+h2 {
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: rgb(119, 169, 185);
+}
+
+.App {
+  background-color: var(--bg);
+  min-height: 100vh;
+  width: 100vw;
+  position: relative;
+
+  background-image: url('./images/theatre-background.jpg');
+  background-color: rgba(0, 0, 0, 0.5);
+  background-blend-mode: multiply;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.help-bar {
+  padding: 1em;
+}
+
+.title {
+  text-align: center;
+  font-family: 'Cinzel', serif;
+}
+
+.grid {
+  &-container {
+    margin: auto;
+    width: 90vw;
+    max-width: 50rem;
+
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  &-square {
+    padding-top: 100%;
+    width: 100%;
+
+    border: 1px solid black;
+    overflow: hidden;
+    position: relative;
+
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+
+    background: var(--grid);
+
+    &:hover {
+      background: var(--highlight);
+      cursor: pointer;
+    }
+  }
+}
+
+.square-0 {
+  border-top-left-radius: 30px;
+}
+.square-2 {
+  border-top-right-radius: 30px;
+}
+.square-6 {
+  border-bottom-left-radius: 30px;
+}
+.square-8 {
+  border-bottom-right-radius: 30px;
+}
+
+.missed-guess {
+  background-color: #f05151;
+}
+
+.logo {
+  width: 40%;
+
+  &-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.y-header,
+.x-header {
+  margin: auto;
+  text-align: center;
+  line-height: 1.5em;
+  // font-size: 1.25em;
+}
+
+.x-header {
+  // padding: 8px;
+  padding-top: 1em;
+  padding-bottom: 1em;
+}
+
+.y-header {
+  // padding-right: 8px;
+}
+
+// search modal
+
+.overlay {
+  background-color: #0000004d;
+  width: 100vw;
+  height: 100vh;
+
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  position: fixed;
+  z-index: 10;
+}
+
+.search-bar{
+  &-container {
+    top: 10%;
+    left: 10%;
+    position: fixed;
+    z-index: 100;
+    margin: auto;
+
+    min-width: 80%;
+    height: 50px;
+    max-width: 50rem;
+  }
+
+  display: flex;
+  // padding: 3px;
+  overflow: hidden;
+
+  &-input {
+    width: 100%;
+    flex-grow: 1;
+    font-size: 1.5rem;
+    border: solid 2px black;
+    position: absolute;
+    border-radius: 30px;
+    background: var(--search);
+    padding-left: 1em;
+    color: white;
+    line-height: calc(var(--size) - 3px);
+    cursor: initial;
+  }
+}
+
+.search-results {
+  background-color: var(--search);
+  min-width: calc(100% + 26px);
+  max-width: 80vw;
+  margin: 0;
+  padding: 0;
+  border: solid 2px black;
+
+  position: relative;
+  top: var(--size);
+  right: 0;
+
+  max-height: 50vh;
+  overflow-y: auto;
+
+  border-radius: 0 0 10px 10px;
+
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+
+  &::-webkit-scrollbar {
+    display: none; /* Chrome */
+  }
+
+  &-items {
+    border-bottom: 2px solid black;
+    line-height: 2rem;
+    padding-left: 5px;
+    list-style: none;
+
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--bg);
+    }
+  }
+}
+
+.correct-label {
+  background-color: #00000080;
+  color: white;
+  position: absolute;
+  display: block;
+  padding: .5em;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
+
+.guess-counter {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  margin-top: 1rem;
+  gap: 1rem;
+  font-size: 2em;
+  font-family: 'Cinzel', serif;
+}
+
+.help-modal {
+  margin: auto;
+  margin-top: 2rem;
+  border-radius: 30px;
+  padding: 1em;
+  width: 70%;
+  max-width: 30rem;
+  background-color: rgb(58, 58, 58);
+  position: relative;
+
+  & h2 {
+    text-align: center;
+    padding: 5px 0 5px 0;
+  }
+}
+
+.help-button {
+  position: absolute;
+  right: 1em;
+  top: 1em;
+  border: solid 2px white;
+  border-radius: 400px;
+  padding: 5px;
+  width: 1em;
+  height: 1em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+@media screen and (max-width: 600px){
+  .grid-container {
+    grid-template-columns: repeat(4, 1fr);
+    width: 75vw;
+  }
+  .empty-item {
+    display: none;
+  }
+}
