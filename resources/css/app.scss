@@ -54,52 +54,23 @@ a {
   font-family: 'Cinzel', serif;
 }
 
-.grid {
-  &-container {
-    margin: auto;
-    width: 90vw;
-    max-width: 50rem;
-
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-  }
-
-  &-square {
-    padding-top: 100%;
-    width: 100%;
-
-    border: 1px solid black;
-    overflow: hidden;
-    position: relative;
-
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-
-    background: var(--grid);
-
-    &:hover {
-      background: var(--highlight);
-      cursor: pointer;
-    }
-  }
+.game-row {
+  position: relative;
+  display: flex;
+  border-radius: 10px;
+  margin: 2rem;
+  width: calc(100% - 4rem);
+  min-height: 94px;
+  background-color: var(--highlight);
 }
 
-.square-0 {
-  border-top-left-radius: 30px;
-}
-.square-2 {
-  border-top-right-radius: 30px;
-}
-.square-6 {
-  border-bottom-left-radius: 30px;
-}
-.square-8 {
-  border-bottom-right-radius: 30px;
-}
-
-.missed-guess {
-  background-color: #f05151;
+.poster-image {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 94px;
+  height: 100%;
+  border-radius: 0 10px 10px 0;
 }
 
 .logo {
@@ -215,7 +186,7 @@ a {
   }
 }
 
-.correct-label {
+.category-label {
   background-color: #00000080;
   color: white;
   position: absolute;
@@ -223,7 +194,9 @@ a {
   padding: .5em;
   bottom: 0px;
   left: 0px;
-  right: 0px;
+  top: 0px;
+  width: 8rem;
+  border-radius: 10px 0 0 10px;
 }
 
 .guess-counter {

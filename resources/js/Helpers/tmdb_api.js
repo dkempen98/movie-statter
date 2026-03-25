@@ -14,7 +14,8 @@ export async function movieSearch(searchString) {
     try {
         const response = await fetch(url, getOptions);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return await response.json();
+        let data = await response.json();
+        return data.results.filter(movie => movie.popularity > 1);
     } catch (error) {
         console.error('Error fetching movie data:', error);
     }
@@ -22,6 +23,18 @@ export async function movieSearch(searchString) {
 
 export async function movieCredits(movieId) {
     const url = `https://api.themoviedb.org/3/movie/${movieId}/credits`;
+
+    try {
+        const response = await fetch(url, getOptions);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching movie data:', error);
+    }
+}
+
+export async function movieDetails(movieId) {
+    const url = `https://api.themoviedb.org/3/movie/${movieId}`;
 
     try {
         const response = await fetch(url, getOptions);

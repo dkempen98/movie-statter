@@ -39,6 +39,9 @@ class HandleInertiaRequests extends Middleware
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
+            'player' => fn () => $request->attributes->get('player')
+                ? ['id' => $request->attributes->get('player')->id]
+                : null,
         ];
     }
 }

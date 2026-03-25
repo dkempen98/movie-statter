@@ -1,18 +1,28 @@
 <?php
 
+use App\Http\Controllers\GuessController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Middleware\ResolvePlayer;
+use App\Models\Game;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    $game = Game::with('categories')->latest()->first();
+    $player = request()->attributes->get('player');
+
+    $guesses = $game
+        ? $game->guesses()->where('player_id', $player->id)->get()->keyBy('category_id')
+        : collect();
+
     return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+        'game'    => $game,
+        'guesses' => $guesses,
     ]);
-});
+})->middleware([\App\Http\Middleware\ResolvePlayer::class]);
+
+Route::post('/guesses', [GuessController::class, 'store'])->middleware(ResolvePlayer::class);
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
