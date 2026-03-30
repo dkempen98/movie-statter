@@ -16,8 +16,14 @@ Route::get('/', function () {
         ? $game->guesses()->where('player_id', $player->id)->with('movie:tmdb_movie_id,title,poster_path,backdrop_path')->get()->keyBy('category_id')
         : collect();
 
+    $score = 0;
+    if($guesses->isNotEmpty()) {
+        $score = $guesses->sum('points');
+    }
+
     return Inertia::render('Welcome', [
         'game'    => $game,
+        'score'   => $score,
         'guesses' => $guesses,
     ]);
 })->middleware([\App\Http\Middleware\ResolvePlayer::class]);

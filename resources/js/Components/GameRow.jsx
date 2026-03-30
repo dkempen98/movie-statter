@@ -41,8 +41,16 @@ export default function GameRow({ game, category, guess = null }) {
             setModal(false)
         }
         setMovies([])
-        setSearchQuery(null)
+        setSearchQuery('')
 
+    }
+
+    function formatPoints() {
+        let pointDisplay = guess.points;
+        if(game.is_currency) {
+            pointDisplay = "$" + new Intl.NumberFormat().format(guess.points)
+        }
+        return `${pointDisplay} ${game.guess_label}`
     }
 
     useEffect(() => {
@@ -88,30 +96,41 @@ export default function GameRow({ game, category, guess = null }) {
                 style={guess?.correct ?
                     {
                         backgroundColor: `#00000080`,
-                        backgroundImage: `url(https://image.tmdb.org/t/p/w780${guess.movie?.backdrop_path})`
+                        backgroundImage: `url(https://image.tmdb.org/t/p/w780${guess.movie?.backdrop_path})`,
+                        borderRadius: `10px 10px 0 0`,
+                        marginBottom: '2.5rem',
                     }
                     : {}
             }
                 type="button"
             >
-                <div className="category-label">
-                    <span>{category.display_name}</span>
-                </div>
 
                 {guess?.correct && (
-                    <div>
-                        <span className="movie-label">{guess.movie?.title}</span>
+                    <div className="row-label">
+                        <span>{guess.movie?.title}</span>
                     </div>
                 )}
 
-                <div
-                    className="poster-image"
-                    // style={
-                    //     guess?.correct && guess?.movie?.poster_path
-                    //         ? { backgroundImage: `url(https://image.tmdb.org/t/p/w92${guess.movie?.poster_path})` }
-                    //         : {}
-                    // }
-                />
+                {!guess?.correct && (
+                    <div className="row-label">
+                        <span>{category.display_name}</span>
+                    </div>
+                )}
+
+                {/*<div*/}
+                {/*    className="poster-image"*/}
+                {/*    // style={*/}
+                {/*    //     guess?.correct && guess?.movie?.poster_path*/}
+                {/*    //         ? { backgroundImage: `url(https://image.tmdb.org/t/p/w92${guess.movie?.poster_path})` }*/}
+                {/*    //         : {}*/}
+                {/*    // }*/}
+                {/*/>*/}
+
+                {guess?.correct && (
+                    <div className="row-score">
+                        <span>{ formatPoints() }</span>
+                    </div>
+                )}
             </button>
 
             {modal && (
@@ -122,7 +141,7 @@ export default function GameRow({ game, category, guess = null }) {
                             autoComplete="off"
                             type="text"
                             className="search-bar-input"
-                            placeholder={`Search for a movie for ${category.display_name}`}
+                            placeholder={`${category.display_name}`}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />

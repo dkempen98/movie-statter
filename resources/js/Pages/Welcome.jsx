@@ -4,7 +4,15 @@ import HelpBar from '@/Components/HelpBar'
 import { usePage } from '@inertiajs/react'
 
 export default function Show() {
-    const { game, guesses } = usePage().props
+    const { game, guesses, score } = usePage().props
+
+    function formatPoints() {
+        let pointDisplay = score;
+        if(game?.is_currency) {
+            pointDisplay = "$" + new Intl.NumberFormat().format(score)
+        }
+        return pointDisplay
+    }
 
     if (!game) {
         return (
@@ -18,6 +26,12 @@ export default function Show() {
     return (
         <div className="App">
             <HelpBar />
+
+            <div className="game-header">
+                <span className="game-title">{ game.label }</span>
+                <span className="point-total">{ formatPoints() }</span>
+            </div>
+
 
             {game.categories.map((category) => (
                 <GameRow

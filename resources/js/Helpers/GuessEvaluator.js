@@ -8,6 +8,8 @@ export async function evaluateGuess(movie, category, game) {
     async function checkCastCrewGuess() {
         try {
             const credits = await movieCredits(movie.id)
+            console.log(category.value);
+            console.log(credits.cast);
             const right = credits.cast.some(m => m.id == category.value) || credits.crew.some(m => m.id == category.value)
             if(!right) {
                 wrongString = 'Person did not appear in the movie, try again!';
@@ -76,7 +78,10 @@ export async function evaluateGuess(movie, category, game) {
     }
 
     // https://image.tmdb.org/t/p/w92/
-    console.log(movie);
+    // console.log(movie);
+    if(score === 0) {
+        correct = false;
+    }
 
     router.post('/guesses', {
         game_id: game.id,

@@ -18,7 +18,7 @@ class GameSeeder extends Seeder
 
         $game = Game::create([
             'date'         => now()->toDateString(),
-            'scoring_type' => ScoringType::OscarNominations->value,
+            'scoring_type' => ScoringType::Revenue->value,
         ]);
 
         $categories = [];
@@ -72,7 +72,7 @@ class GameSeeder extends Seeder
 
             $directors = array_merge($directors, $fetchedDirectors);
 
-            if($page < 3) {
+            if($page < 2) {
                 $fetchedActors = collect($response->json('results', []))
                     ->filter(fn ($person) => $person['known_for_department'] === 'Acting')
                     ->values()

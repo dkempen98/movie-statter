@@ -10,6 +10,12 @@ class Game extends Model
 {
     protected $guarded = ['id'];
 
+    protected $appends = [
+        'label',
+        'guess_label',
+        'is_currency',
+    ];
+
     protected $casts = [
         'scoring_type' => ScoringType::class,
     ];
@@ -27,5 +33,20 @@ class Game extends Model
     public function guesses(): HasMany
     {
         return $this->hasMany(Guess::class);
+    }
+
+    public function getLabelAttribute(): string
+    {
+        return $this->scoring_type->label();
+    }
+
+    public function getGuessLabelAttribute(): string
+    {
+        return $this->scoring_type->guessLabel();
+    }
+
+    public function getIsCurrencyAttribute(): bool
+    {
+        return $this->scoring_type->isCurrency();
     }
 }
