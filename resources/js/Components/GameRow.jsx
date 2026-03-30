@@ -85,7 +85,13 @@ export default function GameRow({ game, category, guess = null }) {
                 className="game-row"
                 onClick={() => !guess?.correct && setModal(true)}
                 disabled={guess?.correct}
-                style={guess?.correct ? { backgroundColor: 'green' } : {}}
+                style={guess?.correct ?
+                    {
+                        backgroundColor: `#00000080`,
+                        backgroundImage: `url(https://image.tmdb.org/t/p/w780${guess.movie?.backdrop_path})`
+                    }
+                    : {}
+            }
                 type="button"
             >
                 <div className="category-label">
@@ -94,17 +100,17 @@ export default function GameRow({ game, category, guess = null }) {
 
                 {guess?.correct && (
                     <div>
-                        <span className="category-label">{guess.movie_title}</span>
+                        <span className="movie-label">{guess.movie?.title}</span>
                     </div>
                 )}
 
                 <div
                     className="poster-image"
-                    style={
-                        guess?.correct && guess?.poster_url
-                            ? { backgroundImage: `url(${guess.poster_url})` }
-                            : {}
-                    }
+                    // style={
+                    //     guess?.correct && guess?.movie?.poster_path
+                    //         ? { backgroundImage: `url(https://image.tmdb.org/t/p/w92${guess.movie?.poster_path})` }
+                    //         : {}
+                    // }
                 />
             </button>
 

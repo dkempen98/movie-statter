@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Guess extends Model
 {
@@ -22,5 +23,10 @@ class Guess extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function movie(): HasOne
+    {
+        return $this->hasOne(Movie::class, 'tmdb_movie_id', 'tmdb_movie_id');
     }
 }

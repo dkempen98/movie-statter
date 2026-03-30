@@ -24,7 +24,7 @@ export default function HelpBar() {
     
     return (
         <div className="help-bar">
-            <h1 className="title">Film Grid</h1>
+            <h1 className="title">Game Title</h1>
             <div className='help-button' onClick={() => setHelpModal(true)}>?</div>
             {helpModal && (
                 <div className='overlay'>

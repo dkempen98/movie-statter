@@ -17,7 +17,6 @@ return new class extends Migration
             $table->unsignedBigInteger('player_id');
             $table->unsignedBigInteger('category_id');
             $table->unsignedBigInteger('tmdb_movie_id');
-            $table->string('movie_title');
             $table->boolean('correct');
             $table->unsignedBigInteger('points')->default(0);
             $table->timestamps();

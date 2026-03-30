@@ -13,7 +13,7 @@ Route::get('/', function () {
     $player = request()->attributes->get('player');
 
     $guesses = $game
-        ? $game->guesses()->where('player_id', $player->id)->get()->keyBy('category_id')
+        ? $game->guesses()->where('player_id', $player->id)->with('movie:tmdb_movie_id,title,poster_path,backdrop_path')->get()->keyBy('category_id')
         : collect();
 
     return Inertia::render('Welcome', [

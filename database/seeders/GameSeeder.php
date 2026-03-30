@@ -18,7 +18,7 @@ class GameSeeder extends Seeder
 
         $game = Game::create([
             'date'         => now()->toDateString(),
-            'scoring_type' => ScoringType::Revenue->value,
+            'scoring_type' => ScoringType::OscarNominations->value,
         ]);
 
         $categories = [];
@@ -58,7 +58,7 @@ class GameSeeder extends Seeder
         $actors = [];
         $directors = [];
 
-        for ($page = 1; $page <= 2; $page++) {
+        for ($page = 1; $page <= 10; $page++) {
             $response = Http::withToken(config('services.tmdb.key'))
                 ->acceptJson()
                 ->get('https://api.themoviedb.org/3/person/popular', ['page' => $page]);
@@ -70,13 +70,16 @@ class GameSeeder extends Seeder
                 ->values()
                 ->all();
 
-            $fetchedActors = collect($response->json('results', []))
-                ->filter(fn ($person) => $person['known_for_department'] === 'Acting')
-                ->values()
-                ->all();
-
-            $actors = array_merge($actors, $fetchedActors);
             $directors = array_merge($directors, $fetchedDirectors);
+
+            if($page < 3) {
+                $fetchedActors = collect($response->json('results', []))
+                    ->filter(fn ($person) => $person['known_for_department'] === 'Acting')
+                    ->values()
+                    ->all();
+
+                $actors = array_merge($actors, $fetchedActors);
+            }
         }
 
         return [

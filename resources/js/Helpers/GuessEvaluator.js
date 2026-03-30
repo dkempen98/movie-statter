@@ -1,5 +1,6 @@
 import {movieCredits, movieDetails} from "@/Helpers/tmdb_api.js";
 import {router} from "@inertiajs/react";
+import {movieAwards} from "@/Helpers/omdb_api.js";
 
 export async function evaluateGuess(movie, category, game) {
     const detailedMovie = await movieDetails(movie.id);
@@ -57,12 +58,34 @@ export async function evaluateGuess(movie, category, game) {
         }
     }
 
+    const omdbList = [
+        'oscar_nominations'
+    ];
+
+    let score = 0;
+
+    if(correct && omdbList.includes(game.scoring_type)) {
+        switch(game.scoring_type) {
+            case 'oscar_nominations': {
+                score = await movieAwards(detailedMovie.imdb_id);
+                break;
+            }
+        }
+    } else if (correct) {
+        score = detailedMovie[game.scoring_type];
+    }
+
+    // https://image.tmdb.org/t/p/w92/
+    console.log(movie);
+
     router.post('/guesses', {
         game_id: game.id,
         category_id: category.id,
         tmdb_movie_id: movie.id,
         movie_title: movie.title,
-        points: correct ? detailedMovie[game.scoring_type] : 0,
+        poster_path: movie.poster_path,
+        backdrop_path: movie.backdrop_path,
+        points: score,
         correct,
     });
 

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --bg: #2e2e2e;
+  --bg: #162026;
   --grid: #adadad;
   --highlight: #ddbf88;
   --search: #310202;
@@ -35,14 +35,15 @@ a {
   min-height: 100vh;
   width: 100vw;
   position: relative;
+  padding-bottom: 1rem;
 
-  background-image: url('./images/theatre-background.jpg');
-  background-color: rgba(0, 0, 0, 0.5);
-  background-blend-mode: multiply;
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  //background-image: url('./images/theatre-background.jpg');
+  //background-color: rgba(0, 0, 0, 0.5);
+  //background-blend-mode: multiply;
+  //background-size: cover;
+  //background-position: center center;
+  //background-repeat: no-repeat;
+  //background-attachment: fixed;
 }
 
 .help-bar {
@@ -62,15 +63,20 @@ a {
   width: calc(100% - 4rem);
   min-height: 94px;
   background-color: var(--highlight);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-blend-mode: multiply;
 }
 
 .poster-image {
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 94px;
+  width: 92px;
   height: 100%;
   border-radius: 0 10px 10px 0;
+  max-width: 33.3%;
 }
 
 .logo {
@@ -187,7 +193,7 @@ a {
 }
 
 .category-label {
-  background-color: #00000080;
+  //background-color: #00000080;
   color: white;
   position: absolute;
   display: block;
@@ -197,6 +203,15 @@ a {
   top: 0px;
   width: 8rem;
   border-radius: 10px 0 0 10px;
+  max-width: 33.3%;
+}
+
+.movie-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 33.3%;
 }
 
 .guess-counter {

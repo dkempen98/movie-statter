@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Guess;
+use App\Models\Movie;
 use Illuminate\Http\Request;
 
 class GuessController extends Controller
@@ -28,12 +29,20 @@ class GuessController extends Controller
      */
     public function store(Request $request)
     {
+        Movie::firstOrCreate(
+            ['tmdb_movie_id' => $request->tmdb_movie_id],
+            [
+                'title' => $request->movie_title,
+                'poster_path' => $request->poster_path,
+                'backdrop_path' => $request->backdrop_path,
+            ]
+        );
+
         Guess::create([
             'game_id'       => $request->game_id,
             'player_id'     => $request->attributes->get('player')->id,
             'category_id'   => $request->category_id,
             'tmdb_movie_id' => $request->tmdb_movie_id,
-            'movie_title'   => $request->movie_title,
             'points'        => $request->points,
             'correct'       => $request->correct,
         ]);
