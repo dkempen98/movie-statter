@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --bg: #162026;
+  --bg: #0e2d4b;
   --grid: #adadad;
-  --highlight: #ddbf88;
-  --search: #310202;
+  --highlight: #211A1D;
+  --search: #00B4D8;
   --size: 50px;
 }
 
@@ -51,6 +51,7 @@ a {
 }
 
 .title {
+  font-size: 1.75em;
   text-align: center;
   font-family: 'Cinzel', serif;
 }
@@ -208,7 +209,7 @@ a {
 
 .row-label {
   color: #fff;
-  text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+  text-shadow: 1px 0 0 var(--highlight), 0 -1px 0 var(--highlight), 0 1px 0 var(--highlight), -1px 0 0 var(--highlight);
   font-size: 1.25em;
   position: absolute;
   top: 0;

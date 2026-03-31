@@ -41,6 +41,10 @@ export default function Show() {
                     guess={guesses[category.id] ?? null}
                 />
             ))}
+
+            <div className="game-header">
+                <span className="point-total">{ (Object.keys(guesses)).length } Guesses</span>
+            </div>
         </div>
     )
 }
