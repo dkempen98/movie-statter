@@ -37,13 +37,20 @@ a {
   position: relative;
   padding-bottom: 1rem;
 
-  //background-image: url('./images/theatre-background.jpg');
-  //background-color: rgba(0, 0, 0, 0.5);
-  //background-blend-mode: multiply;
-  //background-size: cover;
-  //background-position: center center;
-  //background-repeat: no-repeat;
-  //background-attachment: fixed;
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('./images/film-reel.png');
+    background-blend-mode: multiply;
+    background-size: 50px;
+    background-position: center center;
+    background-attachment: fixed;
+    opacity: 0.15;
+    z-index: 0;
+    pointer-events: none;
+  }
+
 }
 
 .help-bar {
@@ -68,6 +75,7 @@ a {
   background-position: center center;
   background-repeat: no-repeat;
   background-blend-mode: multiply;
+  box-shadow: 2px 5px 10px black;
 }
 
 .poster-image {
@@ -231,11 +239,26 @@ a {
 }
 
 .game-header {
+  background-color: var(--highlight);
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-top: 1.5rem;
   font-size: 1.25em;
+  margin-left: 2rem;
+  margin-right: 2rem;
+  padding: 1em;
+  border-radius: 10px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 2px 5px 10px black;
+}
+
+.footer {
+  width: 8rem;
+  margin: 0 auto;
+  padding: .5em;
+  font-size: 1em;
 }
 
 .game-title {

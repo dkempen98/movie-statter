@@ -2,6 +2,7 @@ import '../../css/app.scss'
 import GameRow from '@/Components/GameRow'
 import HelpBar from '@/Components/HelpBar'
 import { usePage } from '@inertiajs/react'
+import chroma from "chroma-js";
 
 export default function Show() {
     const { game, guesses, score } = usePage().props
@@ -11,6 +12,18 @@ export default function Show() {
             pointDisplay = "$" + new Intl.NumberFormat().format(pointDisplay);
         }
         return pointDisplay
+    }
+
+    function getScoreColor() {
+        if(!(game?.target_score > 0)) {
+            return 'white';
+        }
+        const scale = chroma.scale(['#910404', '#f5c702', '#00b61e']);
+        let diff = Math.abs(score / game.target_score)
+        if(diff > 1) {
+            diff = 1 - (diff - 1);
+        }
+        return scale(diff);
     }
 
     if (!game) {
@@ -31,8 +44,13 @@ export default function Show() {
                 {game.target_score > 0 &&
                     <div className="game-scores">
                         <span>Total:</span><span>{ formatPoints(score) }</span>
-                        <span>Target Score:</span><span> { formatPoints(game.target_score) }</span>
-                        <span>Score:</span><span>{ formatPoints(score - game.target_score) }</span>
+                        <span>Target Total:</span><span> { formatPoints(game.target_score) }</span>
+                        <span>Score:</span>
+                        <span style={{
+                            color: getScoreColor()
+                        }}>
+                            { formatPoints(score - game.target_score) }
+                        </span>
                     </div>
                 }
                 {!game.target_score &&
@@ -50,7 +68,7 @@ export default function Show() {
                 />
             ))}
 
-            <div className="game-header">
+            <div className="game-header footer">
                 <span className="point-total">{ (Object.keys(guesses)).length } Guesses</span>
             </div>
         </div>
