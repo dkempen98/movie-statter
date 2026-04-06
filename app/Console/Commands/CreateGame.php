@@ -65,26 +65,49 @@ class CreateGame extends Command
 
         $categories = [];
 
-
-        if($actorCount > 0 || $directorCount > 0) {
+        if ($actorCount > 0 || $directorCount > 0) {
             $people = $this->fetchPopularPeople();
-            $selected = collect($people['directors'])->shuffle()->take($directorCount)
-                ->merge(collect($people['actors'])->shuffle()->take($actorCount));
+            $actorPool = collect($people['actors'])->shuffle();
+            $directorPool = collect($people['directors'])->shuffle();
+            $usedIds = [];
 
-            foreach ($selected as $person) {
-                $categories[] = [
-                    'type'         => CategoryType::CastOrCrew->value,
-                    'value'        => (string) $person['id'],
-                    'display_name' => $person['name'],
-                ];
+            foreach (['actor' => $actorCount, 'director' => $directorCount] as $role => $count) {
+                $pool = $role === 'actor' ? $actorPool : $directorPool;
+
+                for ($i = 0; $i < $count; $i++) {
+                    $available = $pool->filter(fn ($p) => !in_array($p['id'], $usedIds));
+
+                    do {
+                        $person = $available->shift();
+                        if (!$person) break 2;
+                        $keep = $this->confirm("Use {$role}: {$person['name']}?", true);
+                        if (!$keep) $available = $available;
+                    } while (!$keep);
+
+                    $usedIds[] = $person['id'];
+                    $categories[] = [
+                        'type'         => CategoryType::CastOrCrew->value,
+                        'value'        => (string) $person['id'],
+                        'display_name' => $person['name'],
+                    ];
+                }
             }
         }
 
+        if ($decadeCount > 0) {
+            $decades = collect(['1970-1979', '1980-1989', '1990-1999', '2000-2009', '2010-2019'])->shuffle();
+            $used = [];
 
-        if($decadeCount > 0) {
-            $decades = collect(['1970-1979', '1980-1989', '1990-1999', '2000-2009', '2010-2019']);
-            $decadeItems = $decades->shuffle()->take($decadeCount);
-            foreach ($decadeItems as $decade) {
+            for ($i = 0; $i < $decadeCount; $i++) {
+                $available = $decades->filter(fn ($d) => !in_array($d, $used));
+
+                do {
+                    $decade = $available->shift();
+                    if (!$decade) break 2;
+                    $keep = $this->confirm("Use decade: Released in the " . substr($decade, 0, 4) . "s?", true);
+                } while (!$keep);
+
+                $used[] = $decade;
                 $categories[] = [
                     'type'         => CategoryType::YearRange->value,
                     'value'        => $decade,
@@ -93,14 +116,26 @@ class CreateGame extends Command
             }
         }
 
-        $years = collect(range(1980, 2025));
-        $yearItems = $years->shuffle()->take($yearCount);
-        foreach ($yearItems as $year) {
-            $categories[] = [
-                'type' => CategoryType::Year->value,
-                'value' => (string) $year,
-                'display_name' => 'Released in ' . $year,
-            ];
+        if ($yearCount > 0) {
+            $years = collect(range(1980, 2025))->shuffle();
+            $used = [];
+
+            for ($i = 0; $i < $yearCount; $i++) {
+                $available = $years->filter(fn ($y) => !in_array($y, $used));
+
+                do {
+                    $year = $available->shift();
+                    if (!$year) break 2;
+                    $keep = $this->confirm("Use year: Released in {$year}?", true);
+                } while (!$keep);
+
+                $used[] = $year;
+                $categories[] = [
+                    'type'         => CategoryType::Year->value,
+                    'value'        => (string) $year,
+                    'display_name' => 'Released in ' . $year,
+                ];
+            }
         }
 
         collect($categories)->shuffle()->each(fn ($category) => Category::create([
@@ -108,7 +143,109 @@ class CreateGame extends Command
             'game_id' => $game->id,
         ]));
 
+        if ($scoringType === ScoringType::Revenue->value) {
+            $this->info('Estimating revenue target...');
+            $target = $this->estimateRevenueTarget($categories);
+            $rounder = $target % 50000000;
+            if($rounder < 25000000) {
+                $rounder *= -1;
+            }
+            $target = $target + $rounder;
+            $game->update(['target_score' => $target]);
+            $this->info('Revenue target set to: $' . number_format($target));
+        }
+
         $this->info("Game #{$game->id} created with scoring type: {$scoringType}");
+    }
+
+    private function estimateRevenueTarget(array $categories): int
+    {
+        $categoryMovieIds = [];
+
+        foreach ($categories as $index => $category) {
+            $params = ['sort_by' => 'revenue.desc', 'page' => 1];
+
+            if ($category['type'] === CategoryType::CastOrCrew->value) {
+                $params['with_people'] = $category['value'];
+            } elseif ($category['type'] === CategoryType::Year->value) {
+                $params['primary_release_year'] = $category['value'];
+            } elseif ($category['type'] === CategoryType::YearRange->value) {
+                [$start, $end] = explode('-', $category['value']);
+                $params['primary_release_date.gte'] = $start . '-01-01';
+                $params['primary_release_date.lte'] = $end . '-12-31';
+            }
+
+            $response = Http::withToken(config('services.tmdb.key'))
+                ->acceptJson()
+                ->get('https://api.themoviedb.org/3/discover/movie', $params);
+
+            if ($response->failed()) continue;
+
+            $categoryMovieIds[$index] = collect($response->json('results', []))
+                ->take(10)
+                ->pluck('id')
+                ->all();
+        }
+
+        $allIds = collect($categoryMovieIds)->flatten()->unique()->values()->all();
+
+        $responses = Http::pool(fn ($pool) => collect($allIds)->map(
+            fn ($id) => $pool->withToken(config('services.tmdb.key'))
+                ->acceptJson()
+                ->get("https://api.themoviedb.org/3/movie/{$id}")
+        )->all());
+
+        $moviesById = collect($allIds)->combine(
+            collect($responses)->map(fn ($r) => $r->ok() ? [
+                'revenue'    => $r->json('revenue', 0),
+                'popularity' => $r->json('popularity', 1),
+            ] : ['revenue' => 0, 'popularity' => 1])
+        )->all();
+
+        $pools = [];
+
+        foreach ($categoryMovieIds as $index => $ids) {
+            $movies = collect($ids)
+                ->map(fn ($id) => $moviesById[$id] ?? null)
+                ->filter(fn ($m) => $m && $m['revenue'] > 0)
+                ->values()
+                ->all();
+
+            if (!empty($movies)) {
+                $pools[] = $movies;
+            }
+        }
+
+        if (empty($pools)) return 0;
+
+        $simulations = [];
+
+        for ($i = 0; $i < 1000; $i++) {
+            $total = 0;
+            foreach ($pools as $pool) {
+                $total += $this->weightedPick($pool)['revenue'];
+            }
+            $simulations[] = $total;
+        }
+
+        sort($simulations);
+
+        return $simulations[(int) (count($simulations) * 0.5)];
+    }
+
+    private function weightedPick(array $pool): array
+    {
+        $weights = array_map(fn ($m) => sqrt($m['popularity']), $pool);
+        $total = array_sum($weights);
+        $rand = mt_rand() / mt_getrandmax() * $total;
+
+        $cumulative = 0;
+        foreach ($pool as $i => $movie) {
+            $cumulative += $weights[$i];
+            if ($rand <= $cumulative) return $movie;
+        }
+
+        return end($pool);
     }
 
     private function fetchPopularPeople(): array
@@ -130,14 +267,12 @@ class CreateGame extends Command
 
             $directors = array_merge($directors, $fetchedDirectors);
 
-            if ($page < 2) {
-                $fetchedActors = collect($response->json('results', []))
-                    ->filter(fn ($person) => $person['known_for_department'] === 'Acting')
-                    ->values()
-                    ->all();
+            $fetchedActors = collect($response->json('results', []))
+                ->filter(fn ($person) => $person['known_for_department'] === 'Acting')
+                ->values()
+                ->all();
 
-                $actors = array_merge($actors, $fetchedActors);
-            }
+            $actors = array_merge($actors, $fetchedActors);
         }
 
         return [

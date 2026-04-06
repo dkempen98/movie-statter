@@ -30,5 +30,13 @@ enum ScoringType: string
             self::OscarNominations => false,
         };
     }
+
+    public function useTarget(): bool
+    {
+        return match($this) {
+            self::Revenue => true,
+            self::OscarNominations => false,
+        };
+    }
 }
 

@@ -34,6 +34,7 @@ export default function HelpBar() {
                         <p>Each day features 5 categories. Search for a movie you think qualifies for each one and submit your guess</p>
                         <p>If your movie fits the category, you'll earn points based on that day's scoring type which will be listed at the top of the page</p>
                         <p>The same movie can be used for more than one category. There is no guess limit</p>
+                        <p>If there is a target score, the closer you are to 0 for your score the better. You are trying to get as close to that target score as possible.</p>
                         <p>If a guess would result in 0 points, it will not be counted as a correct guess even if it fits the category. This is to ensure that instances where we have incomplete data do not count against you</p>
                         <h2>About</h2>
                         <p>Hit the Marquee was created by an independent developer using the <a href="https://developer.themoviedb.org/docs">TMDB API</a></p>

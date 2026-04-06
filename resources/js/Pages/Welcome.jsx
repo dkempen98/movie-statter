@@ -6,10 +6,9 @@ import { usePage } from '@inertiajs/react'
 export default function Show() {
     const { game, guesses, score } = usePage().props
 
-    function formatPoints() {
-        let pointDisplay = score;
+    function formatPoints(pointDisplay) {
         if(game?.is_currency) {
-            pointDisplay = "$" + new Intl.NumberFormat().format(score)
+            pointDisplay = "$" + new Intl.NumberFormat().format(pointDisplay);
         }
         return pointDisplay
     }
@@ -29,7 +28,16 @@ export default function Show() {
 
             <div className="game-header">
                 <span className="game-title">{ game.label }</span>
-                <span className="point-total">{ formatPoints() }</span>
+                {game.target_score > 0 &&
+                    <div className="game-scores">
+                        <span>Total:</span><span>{ formatPoints(score) }</span>
+                        <span>Target Score:</span><span> { formatPoints(game.target_score) }</span>
+                        <span>Score:</span><span>{ formatPoints(score - game.target_score) }</span>
+                    </div>
+                }
+                {!game.target_score &&
+                    <span className="point-total">{ formatPoints(score) }</span>
+                }
             </div>
 
 
