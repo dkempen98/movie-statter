@@ -164,11 +164,14 @@ class CreateGame extends Command
 
         foreach ($categories as $index => $category) {
             $params = ['sort_by' => 'revenue.desc', 'page' => 1];
+            $movieCount = 10;
 
             if ($category['type'] === CategoryType::CastOrCrew->value) {
                 $params['with_people'] = $category['value'];
             } elseif ($category['type'] === CategoryType::Year->value) {
+//                TODO:: Store these for 2+ years ago so we only do the call once, refresh every ~6 months for re-releases
                 $params['primary_release_year'] = $category['value'];
+                $movieCount = 20;
             } elseif ($category['type'] === CategoryType::YearRange->value) {
                 [$start, $end] = explode('-', $category['value']);
                 $params['primary_release_date.gte'] = $start . '-01-01';
@@ -182,7 +185,7 @@ class CreateGame extends Command
             if ($response->failed()) continue;
 
             $categoryMovieIds[$index] = collect($response->json('results', []))
-                ->take(10)
+                ->take($movieCount)
                 ->pluck('id')
                 ->all();
         }
