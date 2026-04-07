@@ -11,6 +11,7 @@ export default function GameRow({ game, category, guess = null }) {
     const [searchQuery, setSearchQuery] = useState('')
     const [movies, setMovies] = useState([])
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [incorrectString, setIncorrectString] = useState('')
 
     function closeModal() {
         setModal(false)
@@ -34,11 +35,14 @@ export default function GameRow({ game, category, guess = null }) {
             wrongString = await evaluateGuess(movieInfo, category, game)
         } catch (error) {
             console.error(error)
+        } finally {
             setIsSubmitting(false)
         }
 
         if(!wrongString) {
             setModal(false)
+        } else {
+            setIncorrectString(wrongString)
         }
         setMovies([])
         setSearchQuery('')
@@ -141,7 +145,7 @@ export default function GameRow({ game, category, guess = null }) {
                             autoComplete="off"
                             type="text"
                             className="search-bar-input"
-                            placeholder={`${category.display_name}`}
+                            placeholder={incorrectString.length > 0 ? incorrectString : category.display_name}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />

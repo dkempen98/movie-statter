@@ -6,8 +6,12 @@ use App\Enums\CategoryType;
 use App\Enums\ScoringType;
 use App\Models\Category;
 use App\Models\Game;
+use App\Models\Genre;
 use Illuminate\Console\Command;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Number;
+use Random\RandomException;
 
 class CreateGame extends Command
 {
@@ -24,6 +28,7 @@ class CreateGame extends Command
         $countArray = [0,1,2,3,4,5];
         $directorCount = 0;
         $yearCount = 0;
+        $genreCount = 0;
         $decadeCount = 0;
 
         $actorCount = $this->choice(
@@ -52,14 +57,23 @@ class CreateGame extends Command
                     $countArray = array_slice($countArray, 0, ($yearCount) * -1);
                 }
                 if($countArray) {
-                    $decadeCount = array_pop($countArray);
-                    $this->info($decadeCount . " Decade Categories");
+                    $genreCount = $this->choice(
+                        'Select a number of genre options',
+                        $countArray
+                    );
+                    if($genreCount > 0) {
+                        $countArray = array_slice($countArray, 0, ($genreCount) * -1);
+                    }
+                    if($countArray) {
+                        $decadeCount = array_pop($countArray);
+                        $this->info($decadeCount . " Decade Categories");
+                    }
                 }
             }
         }
 
         $game = Game::create([
-            'date'         => now()->toDateString(),
+            'date' => now()->toDateString(),
             'scoring_type' => $scoringType,
         ]);
 
@@ -138,6 +152,30 @@ class CreateGame extends Command
             }
         }
 
+        if ($genreCount > 0) {
+            $genres = Genre::where('active', '=', 1)->get();
+
+            for ($i = 0; $i < $genreCount; $i++) {
+
+                $choice = $this->choice(
+                    'Select a genre',
+                    $genres->pluck('display_name')->toArray(),
+                );
+
+                $genre = Genre::where('display_name', '=', $choice)->first();
+                //TODO:: Determine target from min / max
+
+                if(!empty($genre)) {
+                    $categories[] = [
+                        'type'         => CategoryType::Genre->value,
+                        'value'        => (string) $genre->tmdb_id,
+                        'display_name' => $genre->display_name,
+                    ];
+                }
+
+            }
+        }
+
         collect($categories)->shuffle()->each(fn ($category) => Category::create([
             ...$category,
             'game_id' => $game->id,
@@ -158,11 +196,27 @@ class CreateGame extends Command
         $this->info("Game #{$game->id} created with scoring type: {$scoringType}");
     }
 
+    /**
+     * @throws RandomException
+     * @throws ConnectionException
+     */
     private function estimateRevenueTarget(array $categories): int
     {
         $categoryMovieIds = [];
+        $genreTotal = 0;
+        $target = 0;
 
         foreach ($categories as $index => $category) {
+            if ($category['type'] === CategoryType::Genre->value) {
+                $genre = Genre::where('tmdb_id', $category['value'])->first();
+                $agreed = false;
+                while (!$agreed) {
+                    $value = random_int($genre->min_revenue_value, $genre->max_revenue_value);
+                    $agreed = $this->confirm($category['display_name']." revenue target: ".Number::currency($value));
+                }
+                $genreTotal += random_int($genre->min_revenue_value, $genre->max_revenue_value);
+                continue;
+            }
             $params = ['sort_by' => 'revenue.desc', 'page' => 1];
             $movieCount = 10;
 
@@ -190,50 +244,54 @@ class CreateGame extends Command
                 ->all();
         }
 
-        $allIds = collect($categoryMovieIds)->flatten()->unique()->values()->all();
 
-        $responses = Http::pool(fn ($pool) => collect($allIds)->map(
-            fn ($id) => $pool->withToken(config('services.tmdb.key'))
-                ->acceptJson()
-                ->get("https://api.themoviedb.org/3/movie/{$id}")
-        )->all());
+        if($categoryMovieIds) {
+            $allIds = collect($categoryMovieIds)->flatten()->unique()->values()->all();
 
-        $moviesById = collect($allIds)->combine(
-            collect($responses)->map(fn ($r) => $r->ok() ? [
-                'revenue'    => $r->json('revenue', 0),
-                'popularity' => $r->json('popularity', 1),
-            ] : ['revenue' => 0, 'popularity' => 1])
-        )->all();
+            $responses = Http::pool(fn ($pool) => collect($allIds)->map(
+                fn ($id) => $pool->withToken(config('services.tmdb.key'))
+                    ->acceptJson()
+                    ->get("https://api.themoviedb.org/3/movie/{$id}")
+            )->all());
 
-        $pools = [];
+            $moviesById = collect($allIds)->combine(
+                collect($responses)->map(fn ($r) => $r->ok() ? [
+                    'revenue'    => $r->json('revenue', 0),
+                    'popularity' => $r->json('popularity', 1),
+                ] : ['revenue' => 0, 'popularity' => 1])
+            )->all();
 
-        foreach ($categoryMovieIds as $index => $ids) {
-            $movies = collect($ids)
-                ->map(fn ($id) => $moviesById[$id] ?? null)
-                ->filter(fn ($m) => $m && $m['revenue'] > 0)
-                ->values()
-                ->all();
+            $pools = [];
 
-            if (!empty($movies)) {
-                $pools[] = $movies;
+            foreach ($categoryMovieIds as $index => $ids) {
+                $movies = collect($ids)
+                    ->map(fn ($id) => $moviesById[$id] ?? null)
+                    ->filter(fn ($m) => $m && $m['revenue'] > 0)
+                    ->values()
+                    ->all();
+
+                if (!empty($movies)) {
+                    $pools[] = $movies;
+                }
             }
-        }
 
-        if (empty($pools)) return 0;
+            if (empty($pools)) return 0;
 
-        $simulations = [];
+            $simulations = [];
 
-        for ($i = 0; $i < 1000; $i++) {
-            $total = 0;
-            foreach ($pools as $pool) {
-                $total += $this->weightedPick($pool)['revenue'];
+            for ($i = 0; $i < 1000; $i++) {
+                $total = 0;
+                foreach ($pools as $pool) {
+                    $total += $this->weightedPick($pool)['revenue'];
+                }
+                $simulations[] = $total;
             }
-            $simulations[] = $total;
+
+            sort($simulations);
+
+            $target = $simulations[(int) (count($simulations) * 0.5)];
         }
-
-        sort($simulations);
-
-        return $simulations[(int) (count($simulations) * 0.5)];
+        return $target + $genreTotal;
     }
 
     private function weightedPick(array $pool): array

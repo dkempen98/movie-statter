@@ -38,13 +38,22 @@ export async function evaluateGuess(movie, category, game) {
         const upperRange = values.pop();
         const right = lowerRange < releaseYear < upperRange;
         if(!right) {
-            wrongString = movie.title + 'was released in ' + releaseYear +', try again!';
+            wrongString = movie.title + ' was released in ' + releaseYear +', try again!';
+        }
+        return right;
+    }
+
+    async function checkGenreGuess() {
+        let right = movie.genre_ids?.includes(Number(category.value), false);
+        if (!right) {
+            wrongString = movie.title + ' is Not a ' + category.display_name +' Movie, Try Again!';
         }
         return right;
     }
 
     let correct = false;
 
+    // TODO:: Add genre evaluation
     switch(category.type) {
         case 'cast_or_crew': {
             correct = await checkCastCrewGuess();
@@ -56,6 +65,10 @@ export async function evaluateGuess(movie, category, game) {
         }
         case 'year_range': {
             correct = await checkYearRangeGuess()
+            break;
+        }
+        case 'genre': {
+            correct = await checkGenreGuess();
             break;
         }
     }

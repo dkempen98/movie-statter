@@ -15,14 +15,15 @@ export default function Show() {
     }
 
     function getScoreColor() {
-        if(!(game?.target_score > 0)) {
-            return 'white';
+        if(!(game?.target_score > 0) || score == 0) {
+            return 'transparent';
         }
         const scale = chroma.scale(['#910404', '#f5c702', '#00b61e']);
         let diff = Math.abs(score / game.target_score)
         if(diff > 1) {
             diff = 1 - (diff - 1);
         }
+        console.log(scale(diff));
         return scale(diff);
     }
 
@@ -39,19 +40,23 @@ export default function Show() {
         <div className="App">
             <HelpBar />
 
-            <div className="game-header">
+            <div
+                className="game-header"
+                style={{
+                    borderColor: getScoreColor()
+                }}
+            >
                 <span className="game-title">{ game.label }</span>
                 {game.target_score > 0 &&
                     <div className="game-scores">
                         <span>Total:</span><span>{ formatPoints(score) }</span>
                         <span>Target Total:</span><span> { formatPoints(game.target_score) }</span>
                         <span>Score:</span>
-                        <span style={{
-                            color: getScoreColor()
-                        }}>
-                            { formatPoints(score - game.target_score) }
-                        </span>
+                        <span>{ formatPoints(score - game.target_score) }</span>
                     </div>
+                }
+                {game.target_score > 0 && !score &&
+                    <small style={{color: "slate"}}>Get as close to 0 as possible!</small>
                 }
                 {!game.target_score &&
                     <span className="point-total">{ formatPoints(score) }</span>

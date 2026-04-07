@@ -10,7 +10,7 @@ enum ScoringType: string
     public function label(): string
     {
         return match($this) {
-            self::Revenue => 'Global Box Office Revenue',
+            self::Revenue => 'Global Box Office',
             self::OscarNominations => 'Oscar Nominations',
         };
     }
