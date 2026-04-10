@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react'
 import { movieSearch, movieCredits } from '@/Helpers/tmdb_api'
 import { useEffect, useRef, useState } from 'react'
 import { evaluateGuess } from "@/Helpers/GuessEvaluator.js";
+import clsx from "clsx";
 
 export default function GameRow({ game, category, guess = null }) {
     const containerRef = useRef(null)
@@ -92,9 +93,23 @@ export default function GameRow({ game, category, guess = null }) {
     }, [searchQuery])
 
     return (
-        <div>
+        <div className='game-row-container'>
+            {modal &&
+                <svg height="calc(100% + 4px)" width="calc(100% + 2px)" xmlns="http://www.w3.org/2000/svg">
+                    <rect
+                        rx="10"
+                        ry="10"
+                        className="line"
+                        height="100%"
+                        width="100%"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            }
             <button
-                className="game-row"
+                className={clsx('game-row', {
+                    'selected': modal
+                })}
                 onClick={() => !guess?.correct && setModal(true)}
                 disabled={guess?.correct}
                 style={guess?.correct ?
@@ -105,17 +120,17 @@ export default function GameRow({ game, category, guess = null }) {
                         marginBottom: '2.5rem',
                     }
                     : {}
-            }
+                }
                 type="button"
             >
 
-                {guess?.correct && (
+                {guess?.correct === 1 && (
                     <div className="row-label">
                         <span>{guess.movie?.title}</span>
                     </div>
                 )}
 
-                {!guess?.correct && (
+                {!guess?.correct !== 1 && (
                     <div className="row-label">
                         <span>{category.display_name}</span>
                     </div>
@@ -130,9 +145,9 @@ export default function GameRow({ game, category, guess = null }) {
                 {/*    // }*/}
                 {/*/>*/}
 
-                {guess?.correct && (
+                {guess?.correct === 1 && (
                     <div className="row-score">
-                        <span>{ formatPoints() }</span>
+                        <span>{formatPoints()}</span>
                     </div>
                 )}
             </button>
@@ -144,7 +159,9 @@ export default function GameRow({ game, category, guess = null }) {
                             ref={inputRef}
                             autoComplete="off"
                             type="text"
-                            className="search-bar-input"
+                            className={clsx('search-bar-input', {
+                                'results': movies.length > 0
+                            })}
                             placeholder={incorrectString.length > 0 ? incorrectString : category.display_name}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}

@@ -74,7 +74,7 @@ export default function Show() {
             ))}
 
             <div className="game-header footer">
-                <span className="point-total">{ (Object.keys(guesses)).length } Guesses</span>
+                <span className="point-total">{ (Object.keys(guesses)).length } { (Object.keys(guesses)).length !== 1 ? 'Guesses' : 'Guess' }</span>
             </div>
         </div>
     )
