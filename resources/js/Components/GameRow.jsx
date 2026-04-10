@@ -124,13 +124,13 @@ export default function GameRow({ game, category, guess = null }) {
                 type="button"
             >
 
-                {guess?.correct === 1 && (
+                {guess?.correct && (
                     <div className="row-label">
                         <span>{guess.movie?.title}</span>
                     </div>
                 )}
 
-                {!guess?.correct !== 1 && (
+                {!guess?.correct && (
                     <div className="row-label">
                         <span>{category.display_name}</span>
                     </div>
@@ -145,7 +145,7 @@ export default function GameRow({ game, category, guess = null }) {
                 {/*    // }*/}
                 {/*/>*/}
 
-                {guess?.correct === 1 && (
+                {guess?.correct && (
                     <div className="row-score">
                         <span>{formatPoints()}</span>
                     </div>
