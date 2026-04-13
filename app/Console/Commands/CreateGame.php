@@ -72,8 +72,44 @@ class CreateGame extends Command
             }
         }
 
+        $takenDates = Game::whereDate('date', '>=', now()->toDateString())
+            ->pluck('date')
+            ->map(fn ($d) => \Carbon\Carbon::parse($d)->toDateString())
+            ->all();
+
+        $date = now()->startOfDay();
+        while (in_array($date->toDateString(), $takenDates)) {
+            $date->addDay();
+        }
+
+        $customDate = $this->ask("Game date (YYYY-MM-DD), or press enter for {$date->toDateString()}");
+        if ($customDate) {
+            try {
+                $parsed = \Carbon\Carbon::createFromFormat('Y-m-d', $customDate);
+                if (!$parsed || $parsed->format('Y-m-d') !== $customDate) {
+                    throw new \Exception();
+                }
+                $date = $parsed;
+            } catch (\Exception $e) {
+                $this->error("Invalid date format. Using {$date->toDateString()} instead.");
+            }
+        }
+
+        $existing = Game::whereDate('date', $date->toDateString())->first();
+        if ($existing) {
+            $next = $date->copy()->addDay();
+            while (Game::whereDate('date', $next->toDateString())->exists()) {
+                $next->addDay();
+            }
+            if (!$this->confirm("Game #{$existing->id} already exists for {$date->toDateString()}. Move it to {$next->toDateString()}?")) {
+                return;
+            }
+            $existing->update(['date' => $next->toDateString()]);
+            $this->info("Game #{$existing->id} moved to {$next->toDateString()}.");
+        }
+
         $game = Game::create([
-            'date' => now()->toDateString(),
+            'date' => $date->toDateString(),
             'scoring_type' => $scoringType,
         ]);
 
@@ -94,6 +130,23 @@ class CreateGame extends Command
                     do {
                         $person = $available->shift();
                         if (!$person) break 2;
+
+                        $lastInstance = Category::where('type', CategoryType::CastOrCrew->value)
+                            ->where('value', $person['id'])
+                            ->with('game')
+                            ->orderByDesc(
+                                \DB::table('games')
+                                    ->select('date')
+                                    ->whereColumn('games.id', 'categories.game_id')
+                                    ->where('games.date', '<', $date->toDateString())
+                                    ->limit(1)
+                            )
+                            ->first();
+
+                        if($lastInstance) {
+                            $this->info("{$person['name']} last used on {$lastInstance->game->date}");
+                        }
+
                         $keep = $this->confirm("Use {$role}: {$person['name']}?", true);
                         if (!$keep) $available = $available;
                     } while (!$keep);
@@ -118,6 +171,23 @@ class CreateGame extends Command
                 do {
                     $decade = $available->shift();
                     if (!$decade) break 2;
+
+                    $lastInstance = Category::where('type', CategoryType::YearRange->value)
+                        ->where('value', $decade)
+                        ->with('game')
+                        ->orderByDesc(
+                            \DB::table('games')
+                                ->select('date')
+                                ->whereColumn('games.id', 'categories.game_id')
+                                ->where('games.date', '<', $date->toDateString())
+                                ->limit(1)
+                        )
+                        ->first();
+
+                    if($lastInstance) {
+                        $this->info("{$decade} last used on {$lastInstance->game->date}");
+                    }
+
                     $keep = $this->confirm("Use decade: Released in the " . substr($decade, 0, 4) . "s?", true);
                 } while (!$keep);
 
@@ -140,6 +210,21 @@ class CreateGame extends Command
                 do {
                     $year = $available->shift();
                     if (!$year) break 2;
+                    $lastInstance = Category::where('type', CategoryType::Year->value)
+                        ->where('value', $year)
+                        ->with('game')
+                        ->orderByDesc(
+                            \DB::table('games')
+                                ->select('date')
+                                ->whereColumn('games.id', 'categories.game_id')
+                                ->where('games.date', '<', $date->toDateString())
+                                ->limit(1)
+                        )
+                        ->first();
+
+                    if($lastInstance) {
+                        $this->info("{$year} last used on {$lastInstance->game->date}");
+                    }
                     $keep = $this->confirm("Use year: Released in {$year}?", true);
                 } while (!$keep);
 
@@ -156,14 +241,30 @@ class CreateGame extends Command
             $genres = Genre::where('active', '=', 1)->get();
 
             for ($i = 0; $i < $genreCount; $i++) {
+                $confirmed = false;
+                do {
+                    $choice = $this->choice(
+                        'Select a genre',
+                        $genres->pluck('display_name')->toArray(),
+                    );
+                    $genre = Genre::where('display_name', '=', $choice)->first();
+                    $lastInstance = Category::where('type', CategoryType::Genre->value)
+                        ->where('value', $genre->tmdb_id)
+                        ->with('game')
+                        ->orderByDesc(
+                            \DB::table('games')
+                                ->select('date')
+                                ->whereColumn('games.id', 'categories.game_id')
+                                ->where('games.date', '<', $date->toDateString())
+                                ->limit(1)
+                        )
+                        ->first();
 
-                $choice = $this->choice(
-                    'Select a genre',
-                    $genres->pluck('display_name')->toArray(),
-                );
-
-                $genre = Genre::where('display_name', '=', $choice)->first();
-                //TODO:: Determine target from min / max
+                    if($lastInstance) {
+                        $this->info("{$year} last used on {$lastInstance->game->date}");
+                    }
+                    $confirmed = $this->confirm("Confirm {$choice}?");
+                } while (!$confirmed);
 
                 if(!empty($genre)) {
                     $categories[] = [

@@ -47,6 +47,7 @@ a {
   min-height: 100vh;
   width: 100vw;
   position: relative;
+  isolation: isolate;
   padding-bottom: 1rem;
 
   &::before {
@@ -59,10 +60,15 @@ a {
     background-position: center center;
     background-attachment: fixed;
     opacity: 0.15;
-    z-index: 0;
+    z-index: -1;
     pointer-events: none;
   }
 
+}
+
+.game-container {
+  margin: auto;
+  max-width: 750px;
 }
 
 .help-bar {
@@ -76,6 +82,7 @@ a {
 }
 
 .game-row {
+  cursor: pointer;
   border: none;
   position: relative;
   display: flex;
@@ -326,6 +333,7 @@ a {
   grid-template-columns: repeat(2, 1fr);
   & > span {
     min-width: 50%;
+    margin-top: .33em;
   }
 }
 
@@ -358,6 +366,37 @@ a {
 
   & p {
     margin-bottom: 1em;
+  }
+}
+
+.share {
+  &-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+    margin-top: 2rem;
+  }
+
+  &-button {
+    border: none;
+    border-radius: 10px;
+    padding: 5px;
+    width: 9rem;
+    background-color: var(--search);
+    box-shadow: 2px 5px 10px black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    line-height: 1.5em;
+    font-size: 1em;
+    padding-left: 20px;
+
+    &-icon {
+      position: absolute;
+      left: 5px;
+    }
   }
 }
 

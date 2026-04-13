@@ -10,6 +10,10 @@ class Guess extends Model
 {
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'correct' => 'boolean',
+    ];
+
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);
