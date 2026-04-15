@@ -4,6 +4,7 @@ import {movieAwards} from "@/Helpers/omdb_api.js";
 
 export async function evaluateGuess(movie, category, game) {
     const detailedMovie = await movieDetails(movie.id);
+    // console.log(detailedMovie);
     let wrongString = null;
     async function checkCastCrewGuess() {
         try {

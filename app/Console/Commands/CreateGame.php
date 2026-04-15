@@ -261,7 +261,7 @@ class CreateGame extends Command
                         ->first();
 
                     if($lastInstance) {
-                        $this->info("{$year} last used on {$lastInstance->game->date}");
+                        $this->info("{$genre->display_name} last used on {$lastInstance->game->date}");
                     }
                     $confirmed = $this->confirm("Confirm {$choice}?");
                 } while (!$confirmed);

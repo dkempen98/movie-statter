@@ -15,7 +15,8 @@ export async function movieSearch(searchString) {
         const response = await fetch(url, getOptions);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         let data = await response.json();
-        return data.results.filter(movie => movie.popularity > 1);
+        // return data.results.filter(movie => movie.popularity > 1);
+        return data.results
     } catch (error) {
         console.error('Error fetching movie data:', error);
     }
