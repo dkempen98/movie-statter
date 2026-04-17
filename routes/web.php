@@ -68,7 +68,7 @@ Route::get('/leaderboard', function () {
             'guesses.player_id',
             'users.name',
             DB::raw('SUM(guesses.points) - games.target_score AS closest'),
-            DB::raw('COUNT(guesses.correct) AS right_answers'),
+            DB::raw('COUNT_IF(guesses.correct = 1) AS right_answers'),
         )
         ->whereNotNull('games.target_score')
         ->where('games.id', $game->id)
