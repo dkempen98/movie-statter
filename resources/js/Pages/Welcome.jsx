@@ -81,16 +81,15 @@ export default function Show() {
 
     if (!game) {
         return (
-            <div className="App">
+            <>
                 <HelpBar />
                 <p style={{ textAlign: 'center', marginTop: '2rem' }}>No game available today. Check back soon!</p>
-            </div>
+            </>
         )
     }
 
     return (
-        <div className="App">
-            <div className="game-container">
+        <div className="game-container">
                 <HelpBar />
 
                 <div
@@ -136,6 +135,5 @@ export default function Show() {
                     <span className="point-total">{ (Object.keys(guesses)).length } { (Object.keys(guesses)).length !== 1 ? 'Guesses' : 'Guess' }</span>
                 </div>
             </div>
-        </div>
     )
 }
