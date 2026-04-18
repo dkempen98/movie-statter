@@ -7,7 +7,7 @@ import chroma from "chroma-js";
 import { FaShareAlt } from "react-icons/fa";
 
 export default function Show() {
-    const { game, guesses, score, gameOver } = usePage().props
+    const { game, guesses, guessCount, score, gameOver } = usePage().props
 
     function formatPoints(pointDisplay) {
         if(game?.is_currency) {
@@ -63,7 +63,7 @@ export default function Show() {
         } else {
             lines.push(`Total: ${formatPoints(score)}`)
         }
-        lines.push("Guesses: " + Object.keys(guesses).length)
+        lines.push("Guesses: " + guessCount)
 
         lines.push('')
         lines.push('Play Here!')
@@ -132,7 +132,7 @@ export default function Show() {
                 ))}
 
                 <div className="game-header footer">
-                    <span className="point-total">{ (Object.keys(guesses)).length } { (Object.keys(guesses)).length !== 1 ? 'Guesses' : 'Guess' }</span>
+                    <span className="point-total">{ guessCount } { guessCount !== 1 ? 'Guesses' : 'Guess' }</span>
                 </div>
             </div>
     )

@@ -23,8 +23,14 @@ Route::get('/', function () {
         $game = Game::with('categories')->latest()->first();
     }
 
+    $guessCount =$game->guesses()->where('player_id', $player->id)->count();
+
     $guesses = $game
-        ? $game->guesses()->where('player_id', $player->id)->with('movie:tmdb_movie_id,title,poster_path,backdrop_path')->get()->keyBy('category_id')
+        ? $game->guesses()
+            ->where('player_id', $player->id)
+            ->with('movie:tmdb_movie_id,title,poster_path,backdrop_path')
+            ->get()
+            ->keyBy('category_id')
         : collect();
 
     $score = 0;
@@ -38,6 +44,7 @@ Route::get('/', function () {
         'game'    => $game,
         'score'   => $score,
         'guesses' => $guesses,
+        'guessCount' => $guessCount,
         'gameOver' => $gameOver,
     ]);
 })->middleware([\App\Http\Middleware\ResolvePlayer::class]);
