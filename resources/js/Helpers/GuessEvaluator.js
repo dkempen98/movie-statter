@@ -3,15 +3,37 @@ import {router} from "@inertiajs/react";
 import {movieAwards} from "@/Helpers/omdb_api.js";
 
 export async function evaluateGuess(movie, category, game) {
+    const genreMap = {
+        "28": "Action",
+        "12": "Adventure",
+        "16": "Animation",
+        "35": "Comedy",
+        "80": "Crime",
+        "99": "Documentary",
+        "18": "Drama",
+        "10751": "Family",
+        "14": "Fantasy",
+        "36": "History",
+        "27": "Horror",
+        "10402": "Music",
+        "9648": "Mystery",
+        "10749": "Romance",
+        "878": "Science Fiction",
+        "10770": "TV Movie",
+        "53": "Thriller",
+        "10752": "War",
+        "37": "Western",
+
+    }
     const detailedMovie = await movieDetails(movie.id);
     // console.log(detailedMovie);
     let wrongString = null;
-    async function checkCastCrewGuess() {
+    async function checkCastCrewGuess(value) {
         try {
             const credits = await movieCredits(movie.id)
-            console.log(category.value);
+            console.log(value);
             console.log(credits.cast);
-            const right = credits.cast.some(m => m.id == category.value) || credits.crew.some(m => m.id == category.value)
+            const right = credits.cast.some(m => m.id == value) || credits.crew.some(m => m.id == value)
             if(!right) {
                 wrongString = 'Person did not appear in the movie, try again!';
             }
@@ -22,19 +44,18 @@ export async function evaluateGuess(movie, category, game) {
         }
     }
 
-    async function checkYearGuess() {
-        console.log(movie);
+    async function checkYearGuess(value) {
         const releaseYear = movie.release_date.split("-").shift();
-        const right = releaseYear == category.value;
+        const right = releaseYear == value;
         if(!right) {
-            wrongString = movie.title + 'was released in ' + releaseYear +', try again!';
+            wrongString = movie.title + ' was released in ' + releaseYear +', try again!';
         }
         return right;
     }
 
-    async function checkYearRangeGuess() {
+    async function checkYearRangeGuess(value) {
         const releaseYear = Number(movie.release_date.split("-").shift());
-        let values = category.value.split("-");
+        let values = value.split("-");
         const lowerRange = values.shift();
         const upperRange = values.pop();
         const right = lowerRange < releaseYear < upperRange;
@@ -44,33 +65,39 @@ export async function evaluateGuess(movie, category, game) {
         return right;
     }
 
-    async function checkGenreGuess() {
-        let right = movie.genre_ids?.includes(Number(category.value), false);
+    async function checkGenreGuess(value) {
+        let right = movie.genre_ids?.includes(Number(value), false);
         if (!right) {
-            wrongString = movie.title + ' is Not a ' + category.display_name +' Movie, Try Again!';
+            wrongString = movie.title + ' is Not a ' + genreMap[value] +' Movie, Try Again!';
         }
         return right;
     }
 
     let correct = false;
 
-    // TODO:: Add genre evaluation
-    switch(category.type) {
-        case 'cast_or_crew': {
-            correct = await checkCastCrewGuess();
-            break;
+    async function checkItem(type, value = category.value) {
+        switch(type) {
+            case 'cast_or_crew': {
+                //TODO:: break this up for cast + type / crew / cast and crew
+                return await checkCastCrewGuess(value);
+            }
+            case 'year': {
+                return await checkYearGuess(value);
+            }
+            case 'year_range': {
+                return await checkYearRangeGuess(value);
+            }
+            case 'genre': {
+                return await checkGenreGuess(value);
+            }
         }
-        case 'year': {
-            correct = await checkYearGuess()
-            break;
-        }
-        case 'year_range': {
-            correct = await checkYearRangeGuess()
-            break;
-        }
-        case 'genre': {
-            correct = await checkGenreGuess();
-            break;
+    }
+
+    correct = await checkItem(category.type);
+
+    for (const qualifier of category.qualifiers) {
+        if(correct) {
+            correct = await checkItem(qualifier.type, qualifier.value, qualifier.display_name);
         }
     }
 

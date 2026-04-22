@@ -5,12 +5,16 @@ namespace App\Console\Commands;
 use App\Enums\CategoryType;
 use App\Enums\ScoringType;
 use App\Models\Category;
+use App\Models\CategoryQualifiers;
 use App\Models\Game;
 use App\Models\Genre;
+use App\Models\Movie;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Number;
+use Illuminate\Support\Str;
 use Random\RandomException;
 
 class CreateGame extends Command
@@ -108,10 +112,9 @@ class CreateGame extends Command
             $this->info("Game #{$existing->id} moved to {$next->toDateString()}.");
         }
 
-        $game = Game::create([
-            'date' => $date->toDateString(),
-            'scoring_type' => $scoringType,
-        ]);
+        $game = new Game;
+        $game->date = $date->toDateString();
+        $game->scoring_type = $scoringType;
 
         $categories = [];
 
@@ -144,7 +147,7 @@ class CreateGame extends Command
                             ->first();
 
                         if($lastInstance) {
-                            $this->info("{$person['name']} last used on {$lastInstance->game->date}");
+                            $this->info("{$person['name']} last used on {$lastInstance->game?->date}");
                         }
 
                         $keep = $this->confirm("Use {$role}: {$person['name']}?", true);
@@ -185,7 +188,7 @@ class CreateGame extends Command
                         ->first();
 
                     if($lastInstance) {
-                        $this->info("{$decade} last used on {$lastInstance->game->date}");
+                        $this->info("{$decade} last used on {$lastInstance->game?->date}");
                     }
 
                     $keep = $this->confirm("Use decade: Released in the " . substr($decade, 0, 4) . "s?", true);
@@ -193,8 +196,8 @@ class CreateGame extends Command
 
                 $used[] = $decade;
                 $categories[] = [
-                    'type'         => CategoryType::YearRange->value,
-                    'value'        => $decade,
+                    'type' => CategoryType::YearRange->value,
+                    'value' => $decade,
                     'display_name' => 'Released in the ' . substr($decade, 0, 4) . 's',
                 ];
             }
@@ -223,15 +226,15 @@ class CreateGame extends Command
                         ->first();
 
                     if($lastInstance) {
-                        $this->info("{$year} last used on {$lastInstance->game->date}");
+                        $this->info("{$year} last used on {$lastInstance->game?->date}");
                     }
                     $keep = $this->confirm("Use year: Released in {$year}?", true);
                 } while (!$keep);
 
                 $used[] = $year;
                 $categories[] = [
-                    'type'         => CategoryType::Year->value,
-                    'value'        => (string) $year,
+                    'type' => CategoryType::Year->value,
+                    'value' => (string) $year,
                     'display_name' => 'Released in ' . $year,
                 ];
             }
@@ -260,16 +263,16 @@ class CreateGame extends Command
                         )
                         ->first();
 
-                    if($lastInstance) {
-                        $this->info("{$genre->display_name} last used on {$lastInstance->game->date}");
+                    if($lastInstance?->game?->date) {
+                        $this->info("{$genre->display_name} last used on {$lastInstance->game?->date}");
                     }
                     $confirmed = $this->confirm("Confirm {$choice}?");
                 } while (!$confirmed);
 
                 if(!empty($genre)) {
                     $categories[] = [
-                        'type'         => CategoryType::Genre->value,
-                        'value'        => (string) $genre->tmdb_id,
+                        'type' => CategoryType::Genre->value,
+                        'value' => (string) $genre->tmdb_id,
                         'display_name' => $genre->display_name,
                     ];
                 }
@@ -277,10 +280,21 @@ class CreateGame extends Command
             }
         }
 
+
+        $game->save();
+
         collect($categories)->shuffle()->each(fn ($category) => Category::create([
             ...$category,
             'game_id' => $game->id,
         ]));
+
+        $categories = $game->categories()->get();
+
+        foreach ($categories as $category) {
+            $this->addQualifier($category);
+        }
+
+        $categories->load('qualifiers');
 
         if ($scoringType === ScoringType::Revenue->value) {
             $this->info('Estimating revenue target...');
@@ -301,36 +315,62 @@ class CreateGame extends Command
      * @throws RandomException
      * @throws ConnectionException
      */
-    private function estimateRevenueTarget(array $categories): int
+    private function estimateRevenueTarget($categories): int
     {
         $categoryMovieIds = [];
         $genreTotal = 0;
         $target = 0;
 
         foreach ($categories as $index => $category) {
-            if ($category['type'] === CategoryType::Genre->value) {
-                $genre = Genre::where('tmdb_id', $category['value'])->first();
+            if ($category->type === CategoryType::Genre->value) {
+                $genre = Genre::where('tmdb_id', $category->value)->first();
                 $agreed = false;
                 while (!$agreed) {
                     $value = random_int($genre->min_revenue_value, $genre->max_revenue_value);
-                    $agreed = $this->confirm($category['display_name']." revenue target: ".Number::currency($value));
+                    $agreed = $this->confirm($category->display_name." revenue target: ".Number::currency($value));
                 }
-                $genreTotal += random_int($genre->min_revenue_value, $genre->max_revenue_value);
+                $genreTotal += $value;
                 continue;
             }
             $params = ['sort_by' => 'revenue.desc', 'page' => 1];
             $movieCount = 10;
 
-            if ($category['type'] === CategoryType::CastOrCrew->value) {
-                $params['with_people'] = $category['value'];
-            } elseif ($category['type'] === CategoryType::Year->value) {
-//                TODO:: Store these for 2+ years ago so we only do the call once, refresh every ~6 months for re-releases
-                $params['primary_release_year'] = $category['value'];
+            if ($category->type === CategoryType::CastOrCrew->value) {
+                $params['with_people'] = $category->value;
+            } elseif ($category->type === CategoryType::Year->value) {
+                $params['primary_release_year'] = $category->value;
                 $movieCount = 20;
-            } elseif ($category['type'] === CategoryType::YearRange->value) {
-                [$start, $end] = explode('-', $category['value']);
+            } elseif ($category->type === CategoryType::YearRange->value) {
+                [$start, $end] = explode('-', $category->value);
                 $params['primary_release_date.gte'] = $start . '-01-01';
                 $params['primary_release_date.lte'] = $end . '-12-31';
+            } elseif ($category->type === CategoryType::Genre->value) {
+                $params['with_genres'] = $category->value;
+            }
+
+            if($category->qualifiers?->count() > 0) {
+                $movieCount = 10;
+                foreach($category->qualifiers as $qualifier) {
+                    if ($qualifier->type === CategoryType::CastOrCrew->value) {
+                        if(isset($params['with_people'])) {
+                            $params['with_people'] .= " AND " . $qualifier->value;
+                        } else {
+                            $params['with_people'] = $qualifier->value;
+                        }
+                    } elseif ($qualifier->type === CategoryType::Year->value) {
+                        $params['primary_release_year'] = $category->value;
+                    } elseif ($qualifier->type === CategoryType::YearRange->value) {
+                        [$start, $end] = explode('-', $qualifier->value);
+                        $params['primary_release_date.gte'] = $start . '-01-01';
+                        $params['primary_release_date.lte'] = $end . '-12-31';
+                    } elseif ($qualifier->type === CategoryType::Genre->value) {
+                        if(isset($params['with_genres'])) {
+                            $params['with_genres'] .= ' AND ' . $qualifier->value;
+                        } else {
+                            $params['with_genres'] = $qualifier->value;
+                        }
+                    }
+                }
             }
 
             $response = Http::withToken(config('services.tmdb.key'))
@@ -348,19 +388,56 @@ class CreateGame extends Command
 
         if($categoryMovieIds) {
             $allIds = collect($categoryMovieIds)->flatten()->unique()->values()->all();
+            $toFetch = [];
 
-            $responses = Http::pool(fn ($pool) => collect($allIds)->map(
+            $thisYear = Carbon::now()->startOfYear();
+            $threeMonthsAgo = Carbon::now()->subMonths(3);
+
+            foreach ($allIds as $tmdbId) {
+                $movie = Movie::where('tmdb_movie_id', $tmdbId)
+                    ->where('revenue', '>', 0)
+                    ->whereNotNull('revenue')
+                    ->where('release_date', '<', $thisYear)
+                    ->where('updated_at', '>', $threeMonthsAgo)
+                    ->first();
+                if($movie) {
+
+                } else {
+                    $toFetch[] = $tmdbId;
+                }
+            }
+
+            $responses = Http::pool(fn ($pool) => collect($toFetch)->map(
                 fn ($id) => $pool->withToken(config('services.tmdb.key'))
                     ->acceptJson()
                     ->get("https://api.themoviedb.org/3/movie/{$id}")
             )->all());
 
-            $moviesById = collect($allIds)->combine(
-                collect($responses)->map(fn ($r) => $r->ok() ? [
-                    'revenue'    => $r->json('revenue', 0),
-                    'popularity' => $r->json('popularity', 1),
-                ] : ['revenue' => 0, 'popularity' => 1])
-            )->all();
+            $movies = collect($toFetch)->zip($responses)
+                ->filter(fn ($pair) => $pair[1]->ok())
+                ->mapWithKeys(fn ($pair) => [$pair[0] => $pair[1]->json()]);
+
+            foreach ($movies as $movie) {
+                Movie::updateOrCreate([
+                    'tmdb_movie_id' => $movie['id'],
+                ], [
+                    'release_date' => Carbon::parse($movie['release_date']),
+                    'revenue' => $movie['revenue'],
+                    'title' => $movie['title'],
+                    'popularity' => $movie['popularity'],
+                    'poster_path' => $movie['poster_path'],
+                    'backdrop_path' => $movie['backdrop_path'],
+                ]);
+            }
+
+            $moviesById = Movie::whereIn('tmdb_movie_id', $allIds)
+                ->get()
+                ->keyBy('tmdb_movie_id')
+                ->map(fn ($movie) => [
+                    'revenue'    => $movie->revenue ?? 0,
+                    'popularity' => $movie->popularity ?? 0.01,
+                ])
+                ->all();
 
             $pools = [];
 
@@ -441,5 +518,70 @@ class CreateGame extends Command
             'actors'    => $actors,
             'directors' => $directors,
         ];
+    }
+
+    private function addQualifier(Category $category)
+    {
+        if($this->confirm("Would you like to add any qualifiers to the ".$category->display_name." category?")) {
+            $qualifier = new CategoryQualifiers;
+            $categoryTypes = CategoryType::cases();
+            $choices = [];
+            foreach ($categoryTypes as $type) {
+                if(
+                    $type->qualifierEligible() &&
+                    $type !== $category->type &&
+                    !($type->yearBased() && $category->type->yearBased())
+                ) {
+                    $choices[$type->value] = $type->label();
+                }
+            }
+            $type = $this->choice(
+                'Select a qualifier type',
+                $choices
+            );
+            $qualifier->type = $type;
+            $displayValue = '';
+            $qualifierText = '';
+
+            switch ($type) {
+                case(CategoryType::YearRange->value):
+                    $qualifierText = CategoryType::YearRange->qualifierText();
+                    $decades = ['1950-1959', '1960-1969', '1970-1979', '1980-1989', '1990-1999', '2000-2009', '2010-2019'];
+                    $qualifier->value = $this->choice(
+                        'Select a decade',
+                        $decades
+                    );
+                    if($qualifier->value[0] === '2') {
+                        $displayValue = $qualifier->value[0].$qualifier->value[1].$qualifier->value[2].$qualifier->value[3]."'s";
+                    } else {
+                        $displayValue = $qualifier->value[2].$qualifier->value[3]."'s";
+                    }
+                    break;
+                case(CategoryType::Year->value):
+                    $qualifierText = CategoryType::Year->qualifierText();
+                    $year = 0;
+                    while($year < 1900) {
+                        $year = $this->ask('Type in a year');
+                    }
+                    $qualifier->value = $year;
+                    $displayValue = $year;
+                    break;
+                case(CategoryType::Genre->value):
+                    $genres = Genre::where('active', '=', 1)->get();
+                    $choice = $this->choice(
+                        "Select a genre",
+                        $genres->pluck('display_name')->toArray()
+                    );
+                    $genre = Genre::where('display_name', '=', $choice)->first();
+                    $qualifier->value = $genre->tmdb_id;
+                    $qualifierText = CategoryType::Genre->qualifierText();
+                    $displayValue = $genre->display_name;
+
+                    break;
+            }
+            $qualifier->display_name = Str::replace('$target', $displayValue, $qualifierText);
+            $qualifier->category()->associate($category);
+            $qualifier->save();
+        }
     }
 }

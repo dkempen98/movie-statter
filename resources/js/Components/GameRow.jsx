@@ -133,6 +133,11 @@ export default function GameRow({ game, category, guess = null }) {
                 {!guess?.correct && (
                     <div className="row-label">
                         <span>{category.display_name}</span>
+                        {category?.qualifiers?.map((qualifier) => (
+                            <div className="row-qualifier" key={qualifier.id}>
+                                {qualifier.display_name}
+                            </div>
+                        ))}
                     </div>
                 )}
 

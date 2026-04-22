@@ -18,7 +18,7 @@ Route::get('/', function () {
     $now = now()->setTimezone($timezone);
     $gameDate = $now->hour < 4 ? $now->copy()->subDay()->toDateString() : $now->toDateString();
 
-    $game = Game::with('categories')->whereDate('date', $gameDate)->first();
+    $game = Game::with('categories.qualifiers')->whereDate('date', $gameDate)->first();
     if($game === null) {
         $game = Game::with('categories')->latest()->first();
     }
