@@ -23,7 +23,6 @@ export async function evaluateGuess(movie, category, game) {
         "53": "Thriller",
         "10752": "War",
         "37": "Western",
-
     }
     const detailedMovie = await movieDetails(movie.id);
     // console.log(detailedMovie);

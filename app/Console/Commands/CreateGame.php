@@ -323,7 +323,7 @@ class CreateGame extends Command
         $target = 0;
 
         foreach ($categories as $index => $category) {
-            if ($category->type === CategoryType::Genre->value) {
+            if ($category->type === CategoryType::Genre) {
                 $genre = Genre::where('tmdb_id', $category->value)->first();
                 $agreed = false;
                 while (!$agreed) {
@@ -336,35 +336,35 @@ class CreateGame extends Command
             $params = ['sort_by' => 'popularity.desc', 'page' => 1];
             $movieCount = 10;
 
-            if ($category->type === CategoryType::CastOrCrew->value) {
+            if ($category->type === CategoryType::CastOrCrew) {
                 $params['with_people'] = $category->value;
-            } elseif ($category->type === CategoryType::Year->value) {
+            } elseif ($category->type === CategoryType::Year) {
                 $params['primary_release_year'] = $category->value;
                 $movieCount = 20;
-            } elseif ($category->type === CategoryType::YearRange->value) {
+            } elseif ($category->type === CategoryType::YearRange) {
                 [$start, $end] = explode('-', $category->value);
                 $params['primary_release_date.gte'] = $start . '-01-01';
                 $params['primary_release_date.lte'] = $end . '-12-31';
-            } elseif ($category->type === CategoryType::Genre->value) {
+            } elseif ($category->type === CategoryType::Genre) {
                 $params['with_genres'] = $category->value;
             }
 
             if($category->qualifiers?->count() > 0) {
                 $movieCount = 10;
                 foreach($category->qualifiers as $qualifier) {
-                    if ($qualifier->type === CategoryType::CastOrCrew->value) {
+                    if ($qualifier->type === CategoryType::CastOrCrew) {
                         if(isset($params['with_people'])) {
                             $params['with_people'] .= " AND " . $qualifier->value;
                         } else {
                             $params['with_people'] = $qualifier->value;
                         }
-                    } elseif ($qualifier->type === CategoryType::Year->value) {
-                        $params['primary_release_year'] = $category->value;
-                    } elseif ($qualifier->type === CategoryType::YearRange->value) {
+                    } elseif ($qualifier->type === CategoryType::Year) {
+                        $params['primary_release_year'] = $qualifier->value;
+                    } elseif ($qualifier->type === CategoryType::YearRange) {
                         [$start, $end] = explode('-', $qualifier->value);
                         $params['primary_release_date.gte'] = $start . '-01-01';
                         $params['primary_release_date.lte'] = $end . '-12-31';
-                    } elseif ($qualifier->type === CategoryType::Genre->value) {
+                    } elseif ($qualifier->type === CategoryType::Genre) {
                         if(isset($params['with_genres'])) {
                             $params['with_genres'] .= ' AND ' . $qualifier->value;
                         } else {
