@@ -300,10 +300,11 @@ class CreateGame extends Command
             $this->info('Estimating revenue target...');
             $target = $this->estimateRevenueTarget($categories);
             $rounder = $target % 50000000;
-            if($rounder < 25000000) {
-                $rounder *= -1;
+            if ($rounder < 25000000) {
+                $target -= $rounder;
+            } else {
+                $target += (50000000 - $rounder);
             }
-            $target = $target + $rounder;
             $game->update(['target_score' => $target]);
             $this->info('Revenue target set to: $' . number_format($target));
         }
@@ -332,7 +333,7 @@ class CreateGame extends Command
                 $genreTotal += $value;
                 continue;
             }
-            $params = ['sort_by' => 'revenue.desc', 'page' => 1];
+            $params = ['sort_by' => 'popularity.desc', 'page' => 1];
             $movieCount = 10;
 
             if ($category->type === CategoryType::CastOrCrew->value) {
@@ -460,7 +461,7 @@ class CreateGame extends Command
             for ($i = 0; $i < 1000; $i++) {
                 $total = 0;
                 foreach ($pools as $pool) {
-                    $total += $this->weightedPick($pool)['revenue'];
+                    $total += $this->rankWeightedPick($pool)['revenue'];
                 }
                 $simulations[] = $total;
             }
@@ -472,9 +473,11 @@ class CreateGame extends Command
         return $target + $genreTotal;
     }
 
-    private function weightedPick(array $pool): array
+    private function rankWeightedPick(array $pool): array
     {
-        $weights = array_map(fn ($m) => sqrt($m['popularity']), $pool);
+        $count = count($pool);
+        // Weight by 1/rank: position 0 (highest revenue) gets weight 1/1, position 1 gets 1/2, etc.
+        $weights = array_map(fn ($i) => 1 / ($i + 1), range(0, $count - 1));
         $total = array_sum($weights);
         $rand = mt_rand() / mt_getrandmax() * $total;
 
