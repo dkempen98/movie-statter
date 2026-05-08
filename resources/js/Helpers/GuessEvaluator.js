@@ -27,76 +27,80 @@ export async function evaluateGuess(movie, category, game) {
     const detailedMovie = await movieDetails(movie.id);
     // console.log(detailedMovie);
     let wrongString = null;
-    async function checkCastCrewGuess(value) {
+    async function checkCastCrewGuess(value, disqualifier) {
         try {
             const credits = await movieCredits(movie.id)
-            console.log(value);
-            console.log(credits.cast);
             const right = credits.cast.some(m => m.id == value) || credits.crew.some(m => m.id == value)
-            if(!right) {
+            if(!right && !disqualifier) {
                 wrongString = 'Person did not appear in the movie, try again!';
+            } else if (right && disqualifier) {
+                wrongString = 'Person appeared in the movie, try again!';
             }
-            return right;
+            return right !== disqualifier;
 
         } catch (error) {
             console.error(error)
         }
     }
 
-    async function checkYearGuess(value) {
+    async function checkYearGuess(value, disqualifier) {
         const releaseYear = movie.release_date.split("-").shift();
         const right = releaseYear == value;
-        if(!right) {
+        if((!right && !disqualifier) || (right && disqualifier)) {
             wrongString = movie.title + ' was released in ' + releaseYear +', try again!';
         }
-        return right;
+        return right !== disqualifier;
     }
 
-    async function checkYearRangeGuess(value) {
+    async function checkYearRangeGuess(value, disqualifier) {
         const releaseYear = Number(movie.release_date.split("-").shift());
         let values = value.split("-");
-        const lowerRange = values.shift();
-        const upperRange = values.pop();
-        const right = lowerRange < releaseYear < upperRange;
-        if(!right) {
+        const lowerRange = Number(values.shift());
+        const upperRange = Number(values.pop());
+        const right = lowerRange < releaseYear && releaseYear < upperRange;
+        if((!right && !disqualifier) || (right && disqualifier)) {
             wrongString = movie.title + ' was released in ' + releaseYear +', try again!';
         }
-        return right;
+        return right !== disqualifier;
     }
 
-    async function checkGenreGuess(value) {
+    async function checkGenreGuess(value, disqualifier) {
         let right = movie.genre_ids?.includes(Number(value), false);
-        if (!right) {
+        if(!right && !disqualifier) {
             wrongString = movie.title + ' is Not a ' + genreMap[value] +' Movie, Try Again!';
+        } else if (right && disqualifier) {
+            wrongString = movie.title + ' is a ' + genreMap[value] +' Movie, Try Again!';
         }
-        return right;
+        return right !== disqualifier;
     }
 
     let correct = false;
 
-    async function checkItem(type, value = category.value) {
+    async function checkItem(type, value = category.value, disqualifier = false) {
         switch(type) {
             case 'cast_or_crew': {
                 //TODO:: break this up for cast + type / crew / cast and crew
-                return await checkCastCrewGuess(value);
+                return await checkCastCrewGuess(value, disqualifier);
             }
             case 'year': {
-                return await checkYearGuess(value);
+                return await checkYearGuess(value, disqualifier);
             }
             case 'year_range': {
-                return await checkYearRangeGuess(value);
+                return await checkYearRangeGuess(value, disqualifier);
             }
             case 'genre': {
-                return await checkGenreGuess(value);
+                return await checkGenreGuess(value, disqualifier);
             }
         }
     }
 
     correct = await checkItem(category.type);
 
-    for (const qualifier of category.qualifiers) {
-        if(correct) {
-            correct = await checkItem(qualifier.type, qualifier.value, qualifier.display_name);
+    if (correct) {
+        for (const qualifier of category.qualifiers) {
+            if(correct) {
+                correct = await checkItem(qualifier.type, qualifier.value, qualifier.is_disqualifier);
+            }
         }
     }
 
@@ -120,6 +124,9 @@ export async function evaluateGuess(movie, category, game) {
     // https://image.tmdb.org/t/p/w92/
     // console.log(movie);
     if(score === 0) {
+        if(correct) {
+            wrongString = "Selected movie has a score of 0, try again!";
+        }
         correct = false;
     }
 

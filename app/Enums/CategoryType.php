@@ -27,12 +27,24 @@ enum CategoryType: string
     public function qualifierText(): string
     {
         return match($this) {
-            self::CastOrCrew => '$target in '.$this->label(),
+            self::CastOrCrew => '$target in the Cast Or Crew',
             self::Actor => '$target in Cast',
             self::Director => 'Directed by $target',
             self::Year, => 'Released in $target',
             self::YearRange => 'Released in the $target',
             self::Genre => 'In the $target Genre',
+        };
+    }
+
+    public function disqualifierText(): string
+    {
+        return match($this) {
+            self::CastOrCrew => '$target Not in the Cast Or Crew',
+            self::Actor => '$target Not in the Cast',
+            self::Director => 'Not Directed by $target',
+            self::Year, => 'Not Released in $target',
+            self::YearRange => 'Not Released in the $target',
+            self::Genre => 'Not in the $target Genre',
         };
     }
 

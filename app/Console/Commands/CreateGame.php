@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use Random\RandomException;
+use function Laravel\Prompts\number;
 
 class CreateGame extends Command
 {
@@ -305,8 +306,11 @@ class CreateGame extends Command
             } else {
                 $target += (50000000 - $rounder);
             }
-            $game->update(['target_score' => $target]);
             $this->info('Revenue target set to: $' . number_format($target));
+            if($this->confirm("Would you like to manually override the target?")) {
+                $target = number('Enter the manual target number');
+            }
+            $game->update(['target_score' => $target]);
         }
 
         $this->info("Game #{$game->id} created with scoring type: {$scoringType}");
@@ -352,23 +356,33 @@ class CreateGame extends Command
             if($category->qualifiers?->count() > 0) {
                 $movieCount = 10;
                 foreach($category->qualifiers as $qualifier) {
-                    if ($qualifier->type === CategoryType::CastOrCrew) {
-                        if(isset($params['with_people'])) {
-                            $params['with_people'] .= " AND " . $qualifier->value;
-                        } else {
-                            $params['with_people'] = $qualifier->value;
-                        }
-                    } elseif ($qualifier->type === CategoryType::Year) {
-                        $params['primary_release_year'] = $qualifier->value;
-                    } elseif ($qualifier->type === CategoryType::YearRange) {
-                        [$start, $end] = explode('-', $qualifier->value);
-                        $params['primary_release_date.gte'] = $start . '-01-01';
-                        $params['primary_release_date.lte'] = $end . '-12-31';
-                    } elseif ($qualifier->type === CategoryType::Genre) {
-                        if(isset($params['with_genres'])) {
-                            $params['with_genres'] .= ' AND ' . $qualifier->value;
-                        } else {
-                            $params['with_genres'] = $qualifier->value;
+                    if(!$qualifier->is_disqualifier || $qualifier->type === CategoryType::Genre) {
+                        if ($qualifier->type === CategoryType::CastOrCrew) {
+                            if(isset($params['with_people'])) {
+                                $params['with_people'] .= " AND " . $qualifier->value;
+                            } else {
+                                $params['with_people'] = $qualifier->value;
+                            }
+                        } elseif ($qualifier->type === CategoryType::Year) {
+                            $params['primary_release_year'] = $qualifier->value;
+                        } elseif ($qualifier->type === CategoryType::YearRange) {
+                            [$start, $end] = explode('-', $qualifier->value);
+                            $params['primary_release_date.gte'] = $start . '-01-01';
+                            $params['primary_release_date.lte'] = $end . '-12-31';
+                        } elseif ($qualifier->type === CategoryType::Genre) {
+                            if($qualifier->is_disqualifier) {
+                                if(isset($params['with_genres'])) {
+                                    $params['without_genres'] .= ' AND ' . $qualifier->value;
+                                } else {
+                                    $params['without_genres'] = $qualifier->value;
+                                }
+                            } else {
+                                if(isset($params['with_genres'])) {
+                                    $params['with_genres'] .= ' AND ' . $qualifier->value;
+                                } else {
+                                    $params['with_genres'] = $qualifier->value;
+                                }
+                            }
                         }
                     }
                 }
@@ -545,10 +559,15 @@ class CreateGame extends Command
             $qualifier->type = $type;
             $displayValue = '';
             $qualifierText = '';
+            $isDisqualifier = $this->confirm("Should this be a disqualifier?");
 
             switch ($type) {
                 case(CategoryType::YearRange->value):
-                    $qualifierText = CategoryType::YearRange->qualifierText();
+                    if($isDisqualifier) {
+                        $qualifierText = CategoryType::YearRange->disqualifierText();
+                    } else {
+                        $qualifierText = CategoryType::YearRange->qualifierText();
+                    }
                     $decades = ['1950-1959', '1960-1969', '1970-1979', '1980-1989', '1990-1999', '2000-2009', '2010-2019'];
                     $qualifier->value = $this->choice(
                         'Select a decade',
@@ -561,7 +580,11 @@ class CreateGame extends Command
                     }
                     break;
                 case(CategoryType::Year->value):
-                    $qualifierText = CategoryType::Year->qualifierText();
+                    if($isDisqualifier) {
+                        $qualifierText = CategoryType::Year->disqualifierText();
+                    } else {
+                        $qualifierText = CategoryType::Year->qualifierText();
+                    }
                     $year = 0;
                     while($year < 1900) {
                         $year = $this->ask('Type in a year');
@@ -577,11 +600,16 @@ class CreateGame extends Command
                     );
                     $genre = Genre::where('display_name', '=', $choice)->first();
                     $qualifier->value = $genre->tmdb_id;
-                    $qualifierText = CategoryType::Genre->qualifierText();
+                    if($isDisqualifier) {
+                        $qualifierText = CategoryType::Genre->disqualifierText();
+                    } else {
+                        $qualifierText = CategoryType::Genre->qualifierText();
+                    }
                     $displayValue = $genre->display_name;
 
                     break;
             }
+            $qualifier->is_disqualifier = $isDisqualifier;
             $qualifier->display_name = Str::replace('$target', $displayValue, $qualifierText);
             $qualifier->category()->associate($category);
             $qualifier->save();

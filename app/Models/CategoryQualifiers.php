@@ -13,6 +13,7 @@ class CategoryQualifiers extends Model
     protected function casts(): array
     {
         return [
+            'is_disqualifier' => 'boolean',
             'type' => CategoryType::class,
         ];
     }
