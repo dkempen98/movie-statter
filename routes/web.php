@@ -4,6 +4,8 @@ use App\Http\Controllers\GuessController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\ResolvePlayer;
 use App\Models\Game;
+use App\Models\GamePlayer;
+use App\Models\Player;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -90,6 +92,19 @@ Route::get('/leaderboard', function () {
         'game' => $game,
     ]);
 })->name('leaderboard');
+
+Route::get('stats/{userId}', function($userId) {
+    $player = Player::where('user_id', $userId)->first();
+    $test = GamePlayer::where('player_id', $player->id)
+        ->with('game')
+        ->first();
+    //TODO:: Actually use what I have set up here to get the stats
+    // Also, need to backfill the GamePlayer data with a command
+    return Inertia::render('Stats', [
+        'leaders' => $test,
+        'game' => $test,
+    ]);
+})->name('stats.user');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

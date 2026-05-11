@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\GuessObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+#[ObservedBy(GuessObserver::class)]
 class Guess extends Model
 {
     protected $guarded = ['id'];
@@ -22,6 +25,11 @@ class Guess extends Model
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);
+    }
+
+    public function gamePlayer(): BelongsTo
+    {
+        return $this->belongsTo(GamePlayer::class);
     }
 
     public function category(): BelongsTo

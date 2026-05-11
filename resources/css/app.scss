@@ -525,6 +525,9 @@ a {
     right: -146px !important;
     bottom: -182px !important;
     transition: bottom 200ms, right 200ms 160ms;
+    &.logged-in {
+      bottom: -228px !important;
+    }
   }
 
   &-game,

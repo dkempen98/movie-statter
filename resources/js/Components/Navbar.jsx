@@ -15,7 +15,7 @@ export default function Navbar() {
             >
                 { menuOpen ? "X" : "☰" }
             </button>
-            <div className={`navbar ${menuOpen ? '' : 'closed'}`}>
+            <div className={`navbar ${menuOpen ? '' : 'closed'} ${user ? 'logged-in' : ''}`}>
                 <div className="navbar-game">
                     <Link href="/" onClick={() => setMenuOpen(false)}>Play</Link>
                     <Link href={route('leaderboard')} onClick={() => setMenuOpen(false)}>Leaderboard</Link>
@@ -24,6 +24,7 @@ export default function Navbar() {
                 {user ? (
                     <div className="navbar-user">
                         <Link href={route('profile.edit')} onClick={() => setMenuOpen(false)}>Profile</Link>
+                        <Link href={route('stats.user', { userId: user.id })} onClick={() => setMenuOpen(false)}>My Stats</Link>
                         <Link className="logout" href={route('logout')} method="post" onClick={() => setMenuOpen(false)}>
                             Log Out
                         </Link>
