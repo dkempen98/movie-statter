@@ -97,7 +97,7 @@ export async function evaluateGuess(movie, category, game) {
     correct = await checkItem(category.type);
 
     if (correct) {
-        for (const qualifier of category.qualifiers) {
+        for (const qualifier of category.qualifiers ?? []) {
             if(correct) {
                 correct = await checkItem(qualifier.type, qualifier.value, qualifier.is_disqualifier);
             }
