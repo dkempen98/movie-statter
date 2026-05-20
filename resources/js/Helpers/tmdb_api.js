@@ -8,8 +8,13 @@ const getOptions = {
     }
 };
 
+function bust(url) {
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}_cb=${Date.now()}`;
+}
+
 async function fetchJson(url) {
-    const response = await fetch(url, getOptions);
+    const response = await fetch(bust(url), getOptions);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const buffer = await response.arrayBuffer();
