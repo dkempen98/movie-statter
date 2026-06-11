@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { FaBars, FaTimes } from 'react-icons/fa';
 
 export default function Navbar() {
     const { auth } = usePage().props;
@@ -13,7 +14,7 @@ export default function Navbar() {
                 onClick={() => setMenuOpen((o) => !o)}
                 aria-label="Toggle navigation"
             >
-                { menuOpen ? "X" : "☰" }
+                { menuOpen ? <FaTimes /> : <FaBars /> }
             </button>
             <div className={`navbar ${menuOpen ? '' : 'closed'}`}>
                 <div className="navbar-game">
