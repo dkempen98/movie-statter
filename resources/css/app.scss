@@ -141,7 +141,7 @@ a {
 .help-button {
   position: fixed;
   left: 0;
-  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0px);
   border-radius: 0 10px 0 0;
   padding: 1px 8px;
   line-height: 46px;
@@ -527,7 +527,7 @@ a {
 .navbar-toggle {
   z-index: 9;
   position: absolute;
-  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0px);
   left: 0;
   border-radius: 10px 0 0 0;
   width: 3rem;
