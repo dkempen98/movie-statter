@@ -41,6 +41,18 @@ body {
   background-color: var(--highlight);
 }
 
+body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: env(safe-area-inset-bottom, 0px);
+  background-color: var(--highlight);
+  pointer-events: none;
+  z-index: 10;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--highlight-border) transparent;
@@ -539,7 +551,7 @@ a {
 .navbar {
   &-container {
     position: fixed;
-    bottom: env(safe-area-inset-bottom, 0px);
+    bottom: 0;
     right: 3rem;
     z-index: 8;
   }
