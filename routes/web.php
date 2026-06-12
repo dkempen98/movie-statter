@@ -76,13 +76,14 @@ Route::get('/leaderboard', function () {
             'users.name',
             DB::raw('SUM(guesses.points) - games.target_score AS closest'),
             DB::raw('SUM(guesses.correct) AS right_answers'),
+            DB::raw('SUM(CASE WHEN guesses.tmdb_movie_id = 0 THEN 1 ELSE 0 END) AS gave_up'),
         )
         ->whereNotNull('games.target_score')
         ->where('games.id', $game->id)
         ->groupBy('guesses.player_id', 'guesses.game_id')
         ->having('right_answers', '=', 5)
         ->orderByRaw('ABS(closest)')
-        ->limit(10)
+        ->limit(25)
         ->get();
 
     return Inertia::render('Leaderboard', [

@@ -2,9 +2,10 @@ import { router } from '@inertiajs/react'
 import { movieSearch, movieCredits } from '@/Helpers/tmdb_api'
 import { useEffect, useRef, useState } from 'react'
 import { evaluateGuess } from "@/Helpers/GuessEvaluator.js";
-import { FaCamera, FaRegTimesCircle } from "react-icons/fa";
+import { FaCamera, FaMinusCircle } from "react-icons/fa";
 import ImagePreviewer from "@/Components/ImagePreviewer.jsx";
 import clsx from "clsx";
+import GiveUpWarning from "./GiveUpWarning.jsx";
 
 export default function GameRow({ game, category, guess = null }) {
     const containerRef = useRef(null)
@@ -16,6 +17,7 @@ export default function GameRow({ game, category, guess = null }) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [incorrectString, setIncorrectString] = useState('')
     const [showPreview, setShowPreview] = useState(false)
+    const [showGiveUp, setShowGiveUp] = useState(false)
 
     function closeModal() {
         setModal(false)
@@ -28,7 +30,8 @@ export default function GameRow({ game, category, guess = null }) {
             e.target &&
             containerRef.current &&
             !containerRef.current.contains(e.target) &&
-            !showPreview
+            !showPreview &&
+            !showGiveUp
         ) {
             closeModal()
         }
@@ -58,6 +61,22 @@ export default function GameRow({ game, category, guess = null }) {
 
     }
 
+    function giveUp() {
+        router.post('/guesses', {
+            game_id: game.id,
+            category_id: category.id,
+            tmdb_movie_id: 0,
+            movie_title: "Gave Up",
+            poster_path: "/b9dVH0n7YnBqLmW2c5AzftxhhpH.jpg",
+            backdrop_path: "/wjt1dwtabVm9vujAteDTnXnpHfZ.jpg",
+            points: 0,
+            correct: true,
+        });
+
+        setShowGiveUp(false);
+        setModal(false);
+    }
+
     function formatPoints() {
         let pointDisplay = guess.points;
         if(game.is_currency) {
@@ -72,7 +91,7 @@ export default function GameRow({ game, category, guess = null }) {
         return () => {
             document.removeEventListener('click', handleClickOutside, true)
         }
-    }, [showPreview])
+    }, [showPreview, showGiveUp])
 
     useEffect(() => {
         if (modal && inputRef.current) {
@@ -135,6 +154,12 @@ export default function GameRow({ game, category, guess = null }) {
                 {guess?.correct && (
                     <div className="row-label">
                         <span>{guess.movie?.title}</span>
+                        <div className="row-qualifier">{category.display_name}</div>
+                        {category?.qualifiers?.map((qualifier) => (
+                            <div className="row-qualifier" key={qualifier.id}>
+                                {qualifier.display_name}
+                            </div>
+                        ))}
                     </div>
                 )}
 
@@ -172,9 +197,7 @@ export default function GameRow({ game, category, guess = null }) {
                             ref={inputRef}
                             autoComplete="off"
                             type="text"
-                            className={clsx('search-bar-input', {
-                                'results': movies.length > 0 || category.type === 'cast_or_crew'
-                            })}
+                            className="search-bar-input results"
                             placeholder={incorrectString.length > 0 ? incorrectString : category.display_name}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -182,9 +205,9 @@ export default function GameRow({ game, category, guess = null }) {
 
                         {movies.length === 0 && (
                             <div className="search-results row-button-container">
-                                {/*<button className="row-button give-up">*/}
-                                {/*    <FaRegTimesCircle /> <span>Give Up</span>*/}
-                                {/*</button>*/}
+                                <button className="row-button give-up" onClick={() => setShowGiveUp(true)}>
+                                    <FaMinusCircle /> <span>Give Up</span>
+                                </button>
                                 {category.type === 'cast_or_crew' && (
                                     <button className="row-button view" onClick={() => setShowPreview(true)}>
                                         <FaCamera /> <span>View Photo</span>
@@ -217,11 +240,17 @@ export default function GameRow({ game, category, guess = null }) {
                     </div>
                 </div>
             )}
+            <GiveUpWarning
+                category={ category }
+                open={ showGiveUp }
+                close={ () => setShowGiveUp(false) }
+                giveUp={ () => giveUp() }
+            />
             {category.type === 'cast_or_crew' && (
                 <ImagePreviewer
-                    personId={category.value}
-                    open={showPreview}
-                    close={() => setShowPreview(false)}
+                    personId={ category.value }
+                    open={ showPreview }
+                    close={ () => setShowPreview(false) }
                 />
             )}
         </div>

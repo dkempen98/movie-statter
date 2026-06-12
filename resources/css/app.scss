@@ -96,6 +96,14 @@ a {
   color: rgb(119, 169, 185);
 }
 
+button:hover {
+  cursor: pointer;
+}
+
+[class*="button"]:not([class*="container"]):hover {
+  cursor: pointer;
+}
+
 .App {
   background-color: var(--bg);
   min-height: 100vh;
@@ -359,6 +367,7 @@ a {
   display: flex;
   justify-content: center;
   align-items: center;
+  color: black;
   gap: 5px;
   font-size: 1.25em;
 
@@ -369,6 +378,7 @@ a {
 
   &.give-up {
     background-color: var(--danger);
+    color: white;
   }
 
   & svg {
@@ -407,6 +417,55 @@ a {
     position: relative;
   }
 }
+
+.give-up {
+  &-container {
+    display: flex;
+    height: 80%;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &-modal {
+    border-radius: 10px;
+    width: 70%;
+    max-height: 75vh;
+    max-width: var(--maxWidth);
+    background-color: rgb(58, 58, 58);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  &-button {
+    &-container {
+      display: flex;
+      gap: 1rem;
+    }
+
+    flex-grow: 1;
+    width: auto;
+    height: 2em;
+    border: 1px solid var(--highlight-border);
+    background: var(--danger);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+
+    &.cancel {
+      background-color: var(--highlight);
+    }
+
+    & svg {
+      padding-top: 2px;
+      position: relative;
+    }
+  }
+}
+
 
 .category-label {
   //background-color: #00000080;
