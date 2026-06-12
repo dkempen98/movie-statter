@@ -9,13 +9,6 @@ export default function ImagePreviewer({ personId, open, close }) {
     const [imageNum, setImageNum] = useState(0)
     const [loading, setLoading] = useState(true)
 
-    async function getImages() {
-        if(personId) {
-            const data = await personImages(personId)
-            setImages(data?.profiles ?? null)
-        }
-    }
-
     function toggleImage(step) {
         const arrLength = images.length - 1;
         if(step > 0) {
@@ -40,10 +33,22 @@ export default function ImagePreviewer({ personId, open, close }) {
         }
     }
 
-    useEffect(async () => {
-        setLoading(true);
-        await getImages();
-        setLoading(false);
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadImages() {
+            setLoading(true);
+            const data = personId ? await personImages(personId) : null;
+            if (cancelled) return;
+            setImages(data?.profiles ?? null);
+            setLoading(false);
+        }
+
+        loadImages();
+
+        return () => {
+            cancelled = true;
+        };
     }, [personId]);
 
 
