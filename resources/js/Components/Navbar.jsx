@@ -1,41 +1,57 @@
 import { Link, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import {useEffect, useRef, useState} from 'react';
 import { FaBars, FaTimes } from 'react-icons/fa';
 
 export default function Navbar() {
     const { auth } = usePage().props;
+    const refOne = useRef(null)
     const user = auth?.user;
     const [menuOpen, setMenuOpen] = useState(false);
 
-    return (
-        <nav className="navbar-container">
-            <button
-                className={`corner-button navbar-toggle ${menuOpen ? '' : 'closed'}`}
-                onClick={() => setMenuOpen((o) => !o)}
-                aria-label="Toggle navigation"
-            >
-                { menuOpen ? <FaTimes /> : <FaBars /> }
-            </button>
-            <div className={`navbar ${menuOpen ? '' : 'closed'}`}>
-                <div className="navbar-game">
-                    <Link href="/" onClick={() => setMenuOpen(false)}>Play</Link>
-                    <Link href={route('leaderboard')} onClick={() => setMenuOpen(false)}>Leaderboard</Link>
-                </div>
+    function handleClickOutside(e) {
+        if(e.target && refOne.current) {
+            if(!refOne.current.contains(e.target)) {
+                setMenuOpen(false)
+            }
+        }
+    }
 
-                {user ? (
-                    <div className="navbar-user">
-                        <Link href={route('profile.edit')} onClick={() => setMenuOpen(false)}>Profile</Link>
-                        <Link className="logout" href={route('logout')} method="post" onClick={() => setMenuOpen(false)}>
-                            Log Out
-                        </Link>
+    useEffect(() => {
+        document.addEventListener("click", handleClickOutside, true)
+        return () => document.removeEventListener("click", handleClickOutside, true)
+    }, [])
+
+    return (
+        <div className={`${menuOpen ? 'overlay' : ''}`}>
+            <nav className="navbar-container" ref={refOne}>
+                <button
+                    className={`corner-button navbar-toggle ${menuOpen ? '' : 'closed'}`}
+                    onClick={() => setMenuOpen((o) => !o)}
+                    aria-label="Toggle navigation"
+                >
+                    { menuOpen ? <FaTimes /> : <FaBars /> }
+                </button>
+                <div className={`navbar ${menuOpen ? '' : 'closed'}`}>
+                    <div className="navbar-game">
+                        <Link href="/" onClick={() => setMenuOpen(false)}>Play</Link>
+                        <Link href={route('leaderboard')} onClick={() => setMenuOpen(false)}>Leaderboard</Link>
                     </div>
-                ) : (
-                    <div className="navbar-user">
-                        <Link href={route('login')} onClick={() => setMenuOpen(false)}>Log In</Link>
-                        <Link href={route('register')} onClick={() => setMenuOpen(false)}>Register</Link>
-                    </div>
-                )}
-            </div>
-        </nav>
+
+                    {user ? (
+                        <div className="navbar-user">
+                            <Link href={route('profile.edit')} onClick={() => setMenuOpen(false)}>Profile</Link>
+                            <Link className="logout" href={route('logout')} method="post" onClick={() => setMenuOpen(false)}>
+                                Log Out
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="navbar-user">
+                            <Link href={route('login')} onClick={() => setMenuOpen(false)}>Log In</Link>
+                            <Link href={route('register')} onClick={() => setMenuOpen(false)}>Register</Link>
+                        </div>
+                    )}
+                </div>
+            </nav>
+        </div>
     );
 }
