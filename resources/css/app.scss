@@ -53,6 +53,12 @@ body::after {
   z-index: 10;
 }
 
+@media (display-mode: standalone) {
+  body::after {
+    display: none;
+  }
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--highlight-border) transparent;
@@ -117,10 +123,6 @@ a {
 .game-container {
   margin: auto;
   max-width: 750px;
-}
-
-.help-bar {
-  //padding: 1em;
 }
 
 .corner-button {
@@ -342,6 +344,70 @@ a {
   }
 }
 
+.row-button {
+  &-container {
+    display: flex;
+    width: 100%;
+    gap: 2px;
+    background-color: black;
+  }
+
+  flex-grow: 1;
+  width: auto;
+  height: 2.5rem;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  font-size: 1.25em;
+
+  &.view {
+    background-color: var(--highlight-border);
+    color: white;
+  }
+
+  &.give-up {
+    background-color: var(--danger);
+  }
+
+  & svg {
+    padding-top: 2px;
+    position: relative;
+  }
+}
+
+.person-image {
+  position: relative;
+  max-width: 768px;
+  max-height: 100%;
+  border-radius: 10px 10px 0 0;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.preview-button {
+  &-container {
+    display: flex;
+    width: calc(100% - 1em);
+  }
+
+  flex-grow: 1;
+  width: auto;
+  height: 2em;
+  border: 1px solid var(--highlight-border);
+  background: var(--highlight);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+
+  & svg {
+    padding-top: 2px;
+    position: relative;
+  }
+}
+
 .category-label {
   //background-color: #00000080;
   color: white;
@@ -482,6 +548,25 @@ a {
   align-items: center;
   background-color: var(--danger);
   cursor: pointer;
+}
+
+.preview-modal {
+  border-radius: 10px;
+  width: 70%;
+  max-height: 90vh;
+  max-width: var(--maxWidth);
+  background-color: rgb(58, 58, 58);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: 768px;
+
+  & > .modal-close {
+    padding: 0;
+    border: 1px solid var(--highlight-border);
+    width: 2em;
+    height: 2em;
+  }
 }
 
 .share {

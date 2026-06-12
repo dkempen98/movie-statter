@@ -62,3 +62,13 @@ export async function movieDetails(movieId) {
         console.error('Error fetching movie data:', error);
     }
 }
+
+export async function personImages(personId) {
+    const url = `https://api.themoviedb.org/3/person/${personId}/images`;
+
+    try {
+        return await fetchJson(url);
+    } catch (error) {
+        console.error('Error fetching movie data:', error);
+    }
+}

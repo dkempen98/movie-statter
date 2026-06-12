@@ -2,6 +2,8 @@ import { router } from '@inertiajs/react'
 import { movieSearch, movieCredits } from '@/Helpers/tmdb_api'
 import { useEffect, useRef, useState } from 'react'
 import { evaluateGuess } from "@/Helpers/GuessEvaluator.js";
+import { FaCamera, FaRegTimesCircle } from "react-icons/fa";
+import ImagePreviewer from "@/Components/ImagePreviewer.jsx";
 import clsx from "clsx";
 
 export default function GameRow({ game, category, guess = null }) {
@@ -13,6 +15,7 @@ export default function GameRow({ game, category, guess = null }) {
     const [movies, setMovies] = useState([])
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [incorrectString, setIncorrectString] = useState('')
+    const [showPreview, setShowPreview] = useState(false)
 
     function closeModal() {
         setModal(false)
@@ -21,7 +24,12 @@ export default function GameRow({ game, category, guess = null }) {
     }
 
     function handleClickOutside(e) {
-        if (e.target && containerRef.current && !containerRef.current.contains(e.target)) {
+        if (
+            e.target &&
+            containerRef.current &&
+            !containerRef.current.contains(e.target) &&
+            !showPreview
+        ) {
             closeModal()
         }
     }
@@ -64,7 +72,7 @@ export default function GameRow({ game, category, guess = null }) {
         return () => {
             document.removeEventListener('click', handleClickOutside, true)
         }
-    }, [])
+    }, [showPreview])
 
     useEffect(() => {
         if (modal && inputRef.current) {
@@ -165,12 +173,25 @@ export default function GameRow({ game, category, guess = null }) {
                             autoComplete="off"
                             type="text"
                             className={clsx('search-bar-input', {
-                                'results': movies.length > 0
+                                'results': movies.length > 0 || category.type === 'cast_or_crew'
                             })}
                             placeholder={incorrectString.length > 0 ? incorrectString : category.display_name}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
+
+                        {movies.length === 0 && (
+                            <div className="search-results row-button-container">
+                                {/*<button className="row-button give-up">*/}
+                                {/*    <FaRegTimesCircle /> <span>Give Up</span>*/}
+                                {/*</button>*/}
+                                {category.type === 'cast_or_crew' && (
+                                    <button className="row-button view" onClick={() => setShowPreview(true)}>
+                                        <FaCamera /> <span>View Photo</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
 
                         {movies.length > 0 && (
                             <ul className="search-results">
@@ -195,6 +216,13 @@ export default function GameRow({ game, category, guess = null }) {
                         )}
                     </div>
                 </div>
+            )}
+            {category.type === 'cast_or_crew' && (
+                <ImagePreviewer
+                    personId={category.value}
+                    open={showPreview}
+                    close={() => setShowPreview(false)}
+                />
             )}
         </div>
     )
