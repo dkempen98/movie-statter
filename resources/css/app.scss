@@ -728,6 +728,9 @@ button:hover {
     right: -146px !important;
     bottom: calc(env(safe-area-inset-bottom, 0px) + -188px) !important;
     transition: bottom 200ms, right 200ms 160ms;
+    &.admin {
+      bottom: calc(env(safe-area-inset-bottom, 0px) + -235px) !important;
+    }
   }
 
   &-game,
@@ -942,6 +945,12 @@ button:hover {
 
   & th {
     background-color: var(--search);
+  }
+}
+
+.game-create {
+  & * {
+    padding: 3px;
   }
 }
 

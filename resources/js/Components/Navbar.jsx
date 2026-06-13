@@ -31,7 +31,7 @@ export default function Navbar() {
                 >
                     { menuOpen ? <FaTimes /> : <FaBars /> }
                 </button>
-                <div className={`navbar ${menuOpen ? '' : 'closed'}`}>
+                <div className={`navbar ${menuOpen ? '' : 'closed'} ${user.is_admin ? 'admin' : ''}`}>
                     <div className="navbar-game">
                         <Link href="/" onClick={() => setMenuOpen(false)}>Play</Link>
                         <Link href={route('leaderboard')} onClick={() => setMenuOpen(false)}>Leaderboard</Link>
@@ -39,6 +39,9 @@ export default function Navbar() {
 
                     {user ? (
                         <div className="navbar-user">
+                            { user.is_admin === 1 && (
+                                <Link href={route('game.create')} onClick={() => setMenuOpen(false)}>Create Game</Link>
+                            )}
                             <Link href={route('profile.edit')} onClick={() => setMenuOpen(false)}>Profile</Link>
                             <Link className="logout" href={route('logout')} method="post" onClick={() => setMenuOpen(false)}>
                                 Log Out
