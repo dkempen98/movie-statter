@@ -31,7 +31,7 @@ export default function Navbar() {
                 >
                     { menuOpen ? <FaTimes /> : <FaBars /> }
                 </button>
-                <div className={`navbar ${menuOpen ? '' : 'closed'} ${user.is_admin ? 'admin' : ''}`}>
+                <div className={`navbar ${menuOpen ? '' : 'closed'} ${user?.is_admin ? 'admin' : ''}`}>
                     <div className="navbar-game">
                         <Link href="/" onClick={() => setMenuOpen(false)}>Play</Link>
                         <Link href={route('leaderboard')} onClick={() => setMenuOpen(false)}>Leaderboard</Link>
