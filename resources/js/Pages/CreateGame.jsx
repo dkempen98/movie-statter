@@ -80,15 +80,29 @@ function reducer(draft, action) {
     }
 }
 
+
 export default function CreateGame() {
     const { takenDates, date, lastDecades, lastYears, lastGenres } = usePage().props
 
     const [draft, dispatch] = useReducer(reducer, { ...initialDraft, date })
     const [step, setStep] = useState(0)
+    const [addingQualifier, setAddingQualifier] = useState(false)
+    const [gameSubmitted, setGameSubmitted] = useState(null)
+
+
+    function submitGame() {
+        try {
+            router.post('/games', toPayload(draft))
+            setGameSubmitted(true);
+        } catch (e) {
+            console.error(e);
+        }
+
+    }
 
     return (
         <div className="game-create">
-            <h1>Create Game</h1>
+            <h1 className="game-create-title">Create Game</h1>
 
             {step === 0 && (
                 <DateStep
@@ -105,14 +119,17 @@ export default function CreateGame() {
                     lastDecades={lastDecades}
                     lastYears={lastYears}
                     lastGenres={lastGenres}
+                    usingQualifier={setAddingQualifier}
                 />
             )}
 
             {step === 1 && (
-                <div>
-                    <h2>Revenue Target</h2>
+                <div className="game-create-field">
+                    <label className="game-create-label">Revenue Target</label>
                     <input
+                        className="game-create-input"
                         type="number"
+                        disabled={draft?.categories?.length < 5}
                         value={draft.targetScore}
                         onChange={(e) => dispatch({ type: 'SET_TARGET', value: e.target.value })}
                         placeholder="Target score"
@@ -122,13 +139,39 @@ export default function CreateGame() {
 
             {step === 2 && <ReviewStep draft={draft} />}
 
-            <div>
-                {step > 0 && <button onClick={() => setStep(step - 1)}>Back</button>}
-                {step < 2 && <button onClick={() => setStep(step + 1)}>Next</button>}
-                {step === 2 && (
-                    <button onClick={() => router.post('/games', toPayload(draft))}>
+            <div className="game-create-actions">
+                {step > 0 && !gameSubmitted && (
+                    <button className="btn-secondary large" onClick={() => setStep(step - 1)}>Back</button>
+                )}
+                {step < 2 &&
+                    <button
+                        className="btn-primary large"
+                        onClick={() => setStep(step + 1)}
+                        disabled={
+                            step === 1 &&
+                            (
+                                !draft?.targetScore ||
+                                draft?.categories?.length < 5 ||
+                                addingQualifier
+                            )
+                        }
+                    >
+                        Next
+                    </button>
+                }
+                {step === 2 && !gameSubmitted && (
+                    <button className="btn-primary large" onClick={() => submitGame()}>
                         Create Game
                     </button>
+                )}
+
+                {step === 2 && gameSubmitted && (
+                    <div className="game-create-status">
+                        <h3>Game Created for { draft.date }!</h3>
+                        <button className="btn-primary large" onClick={() => window.location.reload()}>
+                            Generate Another
+                        </button>
+                    </div>
                 )}
             </div>
         </div>
@@ -168,37 +211,19 @@ function DateStep({ date, takenDates, onChange }) {
     }, [date, takenDates])
 
     return (
-        <div>
-            <h2>Game Date</h2>
-            <input ref={inputRef} type="text" placeholder="Select a date" readOnly />
+        <div className="game-create-field">
+            <label className="game-create-label">Game Date</label>
+            <input className="game-create-input" ref={inputRef} type="text" placeholder="Select a date" readOnly />
         </div>
     )
 }
 
-function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres }) {
+function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres, usingQualifier }) {
     return (
-        <div>
-            <h2>
+        <div className="category-step">
+            <h2 className="game-create-title">
                 Categories ({draft.categories.length}/{MAX_CATEGORIES})
             </h2>
-
-            <ul>
-                {draft.categories.map((c) => (
-                    <li key={c.id}>
-                        <strong>{c.displayName}</strong>
-                        <button onClick={() => dispatch({ type: 'REMOVE_CATEGORY', id: c.id })}>
-                            remove
-                        </button>
-                        <Qualifiers
-                            category={c}
-                            dispatch={dispatch}
-                            lastDecades={lastDecades}
-                            lastYears={lastYears}
-                            lastGenres={lastGenres}
-                        />
-                    </li>
-                ))}
-            </ul>
 
             {draft.categories.length < MAX_CATEGORIES && (
                 <CategoryAdder
@@ -208,6 +233,25 @@ function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres }) {
                     lastGenres={lastGenres}
                 />
             )}
+
+            <ul className="category-list">
+                {draft.categories.map((c) => (
+                    <li className="category-item" key={c.id + '_' + c.displayName}>
+                        <span className="game-category-name">{c.displayName}</span>
+                        <button className="btn-danger" onClick={() => dispatch({ type: 'REMOVE_CATEGORY', id: c.id })}>
+                            remove
+                        </button>
+                        <Qualifiers
+                            category={c}
+                            dispatch={dispatch}
+                            lastDecades={lastDecades}
+                            lastYears={lastYears}
+                            lastGenres={lastGenres}
+                            usingQualifier={usingQualifier}
+                        />
+                    </li>
+                ))}
+            </ul>
         </div>
     )
 }
@@ -222,10 +266,17 @@ function CategoryAdder({ dispatch, lastDecades, lastYears, lastGenres }) {
         setPending(null)
     }
 
+    useEffect(() => {
+        if(pending && type === 'cast_or_crew') {
+            add();
+        }
+    }, [pending]);
+
     return (
-        <div>
-            <h3>Add Category</h3>
+        <div className="game-create-field">
+            <label className="game-create-label">Add Category</label>
             <select
+                className="game-create-input"
                 value={type}
                 onChange={(e) => {
                     setType(e.target.value)
@@ -247,15 +298,16 @@ function CategoryAdder({ dispatch, lastDecades, lastYears, lastGenres }) {
                 onPick={setPending}
             />
 
-            {pending && <span> selected: {pending.displayName} </span>}
-            <button onClick={add} disabled={!pending}>
-                Add
-            </button>
+            {type !== 'cast_or_crew' && (
+                <button className="btn-primary" onClick={add} disabled={!pending}>
+                    Add
+                </button>
+            )}
         </div>
     )
 }
 
-function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres }) {
+function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres, usingQualifier }) {
     const [type, setType] = useState(null)
     const [isDisqualifier, setIsDisqualifier] = useState(false)
     const [pending, setPending] = useState(null)
@@ -268,21 +320,44 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres }) 
         dispatch({
             type: 'ADD_QUALIFIER',
             categoryId: category.id,
-            qualifier: { type, value: pending.value, isDisqualifier },
+            qualifier: {
+                type,
+                label: pending.displayName,
+                value: pending.value,
+                isDisqualifier
+            },
         })
+        clearForm();
+    }
+
+    function cancel() {
+        clearForm();
+    }
+
+    function clearForm() {
         setType(null)
         setPending(null)
         setIsDisqualifier(false)
+        usingQualifier(false)
     }
 
+    useEffect(() => {
+        if(type) {
+            usingQualifier(true)
+        }
+    }, [type]);
+
     return (
-        <div>
-            <ul>
+        <div className="qualifier-group">
+            <ul className="qualifier-list">
                 {category.qualifiers.map((q) => (
-                    <li key={q.id}>
-                        {q.isDisqualifier ? 'NOT ' : ''}
-                        {q.type}: {q.value}
+                    <li className="qualifier-item" key={q.id}>
+                        <span className="qualifier-label">
+                            {q.isDisqualifier ? 'NOT ' : ''}
+                            {q.type}: {q.label}
+                        </span>
                         <button
+                            className="btn-danger"
                             onClick={() =>
                                 dispatch({
                                     type: 'REMOVE_QUALIFIER',
@@ -298,6 +373,7 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres }) 
             </ul>
 
             <select
+                className="game-create-input"
                 value={type ?? ''}
                 onChange={(e) => {
                     setType(e.target.value || null)
@@ -314,7 +390,7 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres }) 
 
             {type && (
                 <>
-                    <label>
+                    <label className="game-create-check">
                         <input
                             type="checkbox"
                             checked={isDisqualifier}
@@ -329,9 +405,14 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres }) 
                         lastGenres={lastGenres}
                         onPick={setPending}
                     />
-                    <button onClick={add} disabled={!pending}>
-                        Add Qualifier
-                    </button>
+                    <div className="game-create-actions">
+                        <button className="btn-primary" onClick={add} disabled={!pending}>
+                            Add Qualifier
+                        </button>
+                        <button className="btn-secondary" onClick={() => clearForm()}>
+                            Cancel
+                        </button>
+                    </div>
                 </>
             )}
         </div>
@@ -346,6 +427,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
     if (type === 'year') {
         return (
             <select
+                className="game-create-input"
                 defaultValue=""
                 onChange={(e) =>
                     onPick(
@@ -368,6 +450,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
     if (type === 'year_range') {
         return (
             <select
+                className="game-create-input"
                 defaultValue=""
                 onChange={(e) =>
                     onPick(
@@ -390,6 +473,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
     if (type === 'genre') {
         return (
             <select
+                className="game-create-input"
                 defaultValue=""
                 onChange={(e) => {
                     const g = lastGenres.find((g) => String(g.tmdb_id) === e.target.value)
@@ -434,16 +518,17 @@ function PersonSearch({ onPick }) {
     }
 
     return (
-        <span>
+        <div className="game-search-container">
             <input
+                className="game-search-input"
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search person"
             />
-            <ul>
+            <ul className="game-search-results">
                 {results.map((p) => (
-                    <li key={p.id}>
+                    <li className="game-search-results-items" key={p.id}>
                         <button onClick={() => pickPerson({ value: String(p.id), displayName: p.name })}>
                             {p.name} {p.department ? '(' + p.department + ')' : ''}
                         </button>
@@ -451,7 +536,7 @@ function PersonSearch({ onPick }) {
                     </li>
                 ))}
             </ul>
-        </span>
+        </div>
     )
 }
 
@@ -466,20 +551,22 @@ function ReviewStep({ draft }) {
     }
 
     return (
-        <div>
-            <h2>Review</h2>
+        <div className="review-step">
+            <h2 className="game-create-title">Review</h2>
             <p>Date: {draft.date}</p>
             <p>Target: {formatPoints(draft.targetScore)}</p>
-            <ul>
+            <ul className="category-list">
                 {draft.categories.map((c) => (
-                    <li key={c.id}>
-                        {c.displayName}
+                    <li className="category-item" key={c.id}>
+                        <span className="game-category-name">{c.displayName}</span>
                         {c.qualifiers.length > 0 && (
-                            <ul>
+                            <ul className="qualifier-list">
                                 {c.qualifiers.map((q) => (
-                                    <li key={q.id}>
-                                        {q.isDisqualifier ? 'NOT ' : ''}
-                                        {q.type}: {q.value}
+                                    <li className="qualifier-item" key={q.id}>
+                                        <span className="qualifier-label">
+                                            {q.isDisqualifier ? 'NOT ' : ''}
+                                            {q.type}: {q.value}
+                                        </span>
                                     </li>
                                 ))}
                             </ul>

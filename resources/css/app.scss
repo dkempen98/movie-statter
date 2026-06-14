@@ -100,7 +100,8 @@ button:hover {
   cursor: pointer;
 }
 
-[class*="button"]:not([class*="container"]):hover {
+[class*="button"]:not([class*="container"]):hover,
+[class*="btn"]:not([class*="container"]):hover{
   cursor: pointer;
 }
 
@@ -899,13 +900,41 @@ button:hover {
   transition: background-color 0.15s;
 
   &:hover {
-    background-color: #0096b5;
+    background-color: #a02e2e;
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  border: none;
+  background-color: var(--highlight);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--highlight-border);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+[class*="btn"].large {
+  font-size: 1.5em;
+  width: 7rem;
 }
 
 .auth-link {
