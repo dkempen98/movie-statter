@@ -440,7 +440,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
                 <option value="">select year</option>
                 {lastYears.map((y) => (
                     <option key={y.year} value={y.year}>
-                        {y.year} {y.last ? '- Last Used ' + y.last : ''}
+                        {y.year} {y.last ? '- ' + y.last : ''}
                     </option>
                 ))}
             </select>
@@ -463,7 +463,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
                 <option value="">select decade</option>
                 {lastDecades.map((d) => (
                     <option key={d.decade} value={d.decade}>
-                        {decadeLabel(d.decade)} {d.last ? '- Last Used ' + d.last : ''}
+                        {decadeLabel(d.decade)} {d.last ? '- ' + d.last : ''}
                     </option>
                 ))}
             </select>
@@ -483,7 +483,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
                 <option value="">select genre</option>
                 {lastGenres.map((g) => (
                     <option key={g.tmdb_id} value={g.tmdb_id}>
-                        {g.display_name} {g.last ? '- Last Used ' + g.last : ''}
+                        {g.display_name} {g.last ? '- ' + g.last : ''}
                     </option>
                 ))}
             </select>
@@ -532,7 +532,7 @@ function PersonSearch({ onPick }) {
                         <button onClick={() => pickPerson({ value: String(p.id), displayName: p.name })}>
                             {p.name} {p.department ? '(' + p.department + ')' : ''}
                         </button>
-                        {p.last_used && <span> — Last Used {p.last_used}</span>}
+                        {p.last_used && <span> — {p.last_used}</span>}
                     </li>
                 ))}
             </ul>
