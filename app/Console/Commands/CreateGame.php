@@ -88,6 +88,7 @@ class CreateGame extends Command
         }
 
         $customDate = $this->ask("Game date (YYYY-MM-DD), or press enter for {$date->toDateString()}");
+        //TODO:: Add this to game controller
         if ($customDate) {
             try {
                 $parsed = \Carbon\Carbon::createFromFormat('Y-m-d', $customDate);
@@ -119,6 +120,7 @@ class CreateGame extends Command
 
         $categories = [];
 
+        //TODO:: Add this getter
         if ($actorCount > 0 || $directorCount > 0) {
             $people = $this->fetchPopularPeople();
             $actorPool = collect($people['actors'])->shuffle();
@@ -166,7 +168,7 @@ class CreateGame extends Command
         }
 
         if ($decadeCount > 0) {
-            $decades = collect(['1970-1979', '1980-1989', '1990-1999', '2000-2009', '2010-2019'])->shuffle();
+            $decades = collect(['1970-1979', '1980-1989', '1990-1999', '2000-2009', '2010-2019', '2020-2029'])->shuffle();
             $used = [];
 
             for ($i = 0; $i < $decadeCount; $i++) {
@@ -284,7 +286,7 @@ class CreateGame extends Command
 
         $game->save();
 
-        collect($categories)->shuffle()->each(fn ($category) => Category::create([
+        collect($categories)->each(fn ($category) => Category::create([
             ...$category,
             'game_id' => $game->id,
         ]));
@@ -299,6 +301,7 @@ class CreateGame extends Command
 
         if ($scoringType === ScoringType::Revenue->value) {
             $this->info('Estimating revenue target...');
+            //TODO:: Add to C
             $target = $this->estimateRevenueTarget($categories);
             $rounder = $target % 50000000;
             if ($rounder < 25000000) {

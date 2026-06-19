@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\GuessController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\ResolvePlayer;
@@ -78,13 +79,14 @@ Route::get('/leaderboard', function () {
             'users.name',
             DB::raw('SUM(guesses.points) - games.target_score AS closest'),
             DB::raw('SUM(guesses.correct) AS right_answers'),
+            DB::raw('SUM(CASE WHEN guesses.tmdb_movie_id = 0 THEN 1 ELSE 0 END) AS gave_up'),
         )
         ->whereNotNull('games.target_score')
         ->where('games.id', $game->id)
         ->groupBy('guesses.player_id', 'guesses.game_id')
         ->having('right_answers', '=', 5)
         ->orderByRaw('ABS(closest)')
-        ->limit(10)
+        ->limit(25)
         ->get();
 
     return Inertia::render('Leaderboard', [
@@ -110,6 +112,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/create-game/create', [GameController::class, 'create'])->name('game.create');
+    Route::post('/games', [GameController::class, 'store'])->name('game.store');
+    Route::get('/tmdb/search/person', [GameController::class, 'searchPeople'])->name('tmdb.search.person');
 });
 
 require __DIR__.'/auth.php';

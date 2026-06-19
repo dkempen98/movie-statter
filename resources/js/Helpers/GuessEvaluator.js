@@ -57,7 +57,7 @@ export async function evaluateGuess(movie, category, game) {
         let values = value.split("-");
         const lowerRange = Number(values.shift());
         const upperRange = Number(values.pop());
-        const right = lowerRange < releaseYear && releaseYear < upperRange;
+        const right = lowerRange <= releaseYear && releaseYear <= upperRange;
         if((!right && !disqualifier) || (right && disqualifier)) {
             wrongString = movie.title + ' was released in ' + releaseYear +', try again!';
         }
@@ -97,7 +97,7 @@ export async function evaluateGuess(movie, category, game) {
     correct = await checkItem(category.type);
 
     if (correct) {
-        for (const qualifier of category.qualifiers) {
+        for (const qualifier of category.qualifiers ?? []) {
             if(correct) {
                 correct = await checkItem(qualifier.type, qualifier.value, qualifier.is_disqualifier);
             }
