@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\ResolvePlayer;
 use App\Models\Game;
 use App\Models\GamePlayer;
+use App\Models\Guess;
 use App\Models\Player;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
@@ -97,14 +98,45 @@ Route::get('/leaderboard', function () {
 
 Route::get('stats/{userId}', function($userId) {
     $player = Player::where('user_id', $userId)->first();
-    $test = GamePlayer::where('player_id', $player->id)
-        ->with('game')
+    $bestGame = GamePlayer::where('game_players.player_id', $player->id)
+        ->join('guesses AS g', 'g.player_id', '=', 'game_players.player_id')
+        ->join('games', 'g.game_id', '=', 'games.id')
+        ->select(
+            'games.id as game_id',
+            DB::raw('SUM(g.points) - games.target_score AS closest'),
+            DB::raw('SUM(g.correct) AS right_answers'),
+            DB::raw('SUM(CASE WHEN g.tmdb_movie_id = 0 THEN 1 ELSE 0 END) AS gave_up'),
+        )
+        ->whereNotNull('games.target_score')
+        ->groupBy('g.player_id', 'g.game_id')
+        ->having('right_answers', '=', 5)
+        ->orderByRaw('gave_up DESC, ABS(closest) ASC')
+        ->with(['game', 'guesses' => function ($query) {
+            $query->where('guesses.game_id', '=', 'games.id');
+        }])
         ->first();
+    $mostGuessedMovie = Guess::query()
+        ->where('player_id', $player->id)
+        ->select(
+            'guesses.tmdb_movie_id',
+            DB::raw('COUNT(guesses.tmdb_movie_id) AS movie_count'),
+            'guesses.player_id',
+            'movies.title',
+            'movies.poster_path',
+            'movies.backdrop_path',
+        )->join('movies', 'guesses.tmdb_movie_id', '=', 'movies.tmdb_movie_id')
+        ->groupBy('guesses.tmdb_movie_id', 'guesses.player_id')
+        ->orderBy('movie_count', 'desc')
+        ->first();
+
+    dd($player->toArray(), $bestGame->toArray(), $mostGuessedMovie->toArray());
+
+
     //TODO:: Actually use what I have set up here to get the stats
     // Also, need to backfill the GamePlayer data with a command
     return Inertia::render('Stats', [
-        'leaders' => $test,
-        'game' => $test,
+        'leaders' => $bestGame,
+        'game' => $bestGame,
     ]);
 })->name('stats.user');
 
