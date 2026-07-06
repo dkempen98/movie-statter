@@ -124,21 +124,21 @@ class GameController extends Controller
     {
         $data = $request->validate([
             'date' => 'required|date',
-            'targetScore' => 'required|integer',
+            'target_score' => 'required|integer',
             'categories' => 'required|array|min:1|max:5',
             'categories.*.type' => 'required|string',
             'categories.*.value' => 'required',
-            'categories.*.displayName' => 'required|string',
+            'categories.*.display_name' => 'required|string',
             'categories.*.qualifiers' => 'array',
             'categories.*.qualifiers.*.type' => 'required|string',
             'categories.*.qualifiers.*.value' => 'required',
-            'categories.*.qualifiers.*.isDisqualifier' => 'boolean',
+            'categories.*.qualifiers.*.is_disqualifier' => 'boolean',
         ]);
 
         $game = new Game;
         $game->date = $data['date'];
         $game->scoring_type = ScoringType::Revenue->value;
-        $game->target_score = $data['targetScore'];
+        $game->target_score = $data['target_score'];
         $game->save();
 
         foreach ($data['categories'] as $cat) {
@@ -146,12 +146,12 @@ class GameController extends Controller
                 'game_id' => $game->id,
                 'type' => $cat['type'],
                 'value' => (string) $cat['value'],
-                'display_name' => $cat['displayName'],
+                'display_name' => $cat['display_name'],
             ]);
 
             foreach ($cat['qualifiers'] ?? [] as $q) {
                 $type = CategoryType::from($q['type']);
-                $isDisqualifier = $q['isDisqualifier'] ?? false;
+                $isDisqualifier = $q['is_disqualifier'] ?? false;
                 $text = $isDisqualifier ? $type->disqualifierText() : $type->qualifierText();
 
                 $qualifier = new CategoryQualifiers;
@@ -246,17 +246,75 @@ class GameController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Game $game)
+    public function edit($date)
     {
-        //
+        $game = Game::query()
+            ->where('date', '=', $date)
+            ->with('categories.qualifiers')
+            ->first();
+        return response()->json(['game' => $game]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Game $game)
+    public function update(Request $request, $gameId)
     {
-        //
+        $data = $request->validate([
+            'date' => 'required|date',
+            'target_score' => 'required|integer',
+            'categories' => 'required|array|min:1|max:5',
+            'categories.*.type' => 'required|string',
+            'categories.*.value' => 'required',
+            'categories.*.display_name' => 'required|string',
+            'categories.*.qualifiers' => 'array',
+            'categories.*.qualifiers.*.type' => 'required|string',
+            'categories.*.qualifiers.*.value' => 'required',
+            'categories.*.qualifiers.*.is_disqualifier' => 'boolean',
+        ]);
+
+        $game = Game::query()
+            ->with('categories.qualifiers')
+            ->find($gameId);
+
+        \DB::transaction(function () use ($game, $data) {
+            $game->update([
+                'date' => $data['date'],
+                'target_score' => $data['target_score'],
+            ]);
+
+            $keptCategoryIds = [];
+            foreach ($data['categories'] as $cat) {
+                $category = $game->categories()->updateOrCreate(
+                    ['id' => $cat['id'] ?? null],
+                    [
+                        'type' => $cat['type'],
+                        'value' => (string) $cat['value'],
+                        'display_name' => $cat['display_name'],
+                    ]
+                );
+                $keptCategoryIds[] = $category->id;
+
+                $keptQualifierIds = [];
+                foreach ($cat['qualifiers'] ?? [] as $q) {
+                    $type = CategoryType::from($q['type']);
+                    $isDisqualifier = $q['is_disqualifier'] ?? false;
+                    $text = $isDisqualifier ? $type->disqualifierText() : $type->qualifierText();
+                    $qualifier = $category->qualifiers()->updateOrCreate(
+                        ['id' => $q['id'] ?? null],
+                        [
+                            "type" => $type->value,
+                            "value" => (string) $q['value'],
+                            "is_disqualifier" => $isDisqualifier,
+                            "display_name" => Str::replace('$target', $this->qualifierDisplayValue($type, $q['value']), $text),
+                        ]
+                    );
+                    $keptQualifierIds[] = $qualifier->id;
+                }
+                $category->qualifiers()->whereNotIn('id', $keptQualifierIds)->delete();
+            }
+            $game->categories()->whereNotIn('id', $keptCategoryIds)->delete();
+        });
     }
 
     /**

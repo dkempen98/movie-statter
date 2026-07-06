@@ -1,6 +1,7 @@
 import '../../css/app.scss'
 import { usePage, router } from '@inertiajs/react'
 import { useEffect, useReducer, useRef, useState } from 'react'
+import { FaPencilAlt } from "react-icons/fa";
 import flatpickr from 'flatpickr'
 import 'flatpickr/dist/flatpickr.css'
 
@@ -26,10 +27,11 @@ function eligibleQualifierTypes(categoryType) {
 }
 
 const initialDraft = {
+    game_id: null,
     date: null,
-    scoringType: 'revenue',
+    scoring_type: 'revenue',
     categories: [],
-    targetScore: '',
+    target_score: '',
 }
 
 function reducer(draft, action) {
@@ -38,9 +40,29 @@ function reducer(draft, action) {
             return { ...draft, date: action.date }
 
         case 'SET_TARGET':
-            return { ...draft, targetScore: action.value }
+            return { ...draft, target_score: action.value }
+
+        case 'SET_CATEGORIES':
+            console.log({
+                ...draft,
+                categories: action.categories,
+            })
+            return {
+                ...draft,
+                categories: action.categories,
+            }
+
+        case 'SET_GAME_ID':
+            return { ...draft, game_id: action.game_id }
 
         case 'ADD_CATEGORY':
+            console.log({
+                ...draft,
+                categories: [
+                    ...draft.categories,
+                    { id: newId('c'), qualifiers: [], ...action.category },
+                ],
+            })
             return {
                 ...draft,
                 categories: [
@@ -92,12 +114,37 @@ export default function CreateGame() {
 
     function submitGame() {
         try {
-            router.post('/games', toPayload(draft))
+            if(draft?.game_id) {
+                router.put('/game/'+draft.game_id+'/update', toPayload(draft))
+            } else {
+                router.post('/games', toPayload(draft))
+            }
             setGameSubmitted(true);
         } catch (e) {
             console.error(e);
         }
 
+    }
+
+    async function editGame(date) {
+        try {
+            let { data } = await axios.get('/game/'+date+'/edit');
+            dispatch({ type: 'SET_DATE', date: date })
+            dispatch({ type: 'SET_TARGET', value: data.game?.target_score })
+            dispatch({ type: 'SET_CATEGORIES', categories: data.game?.categories })
+            dispatch({ type: 'SET_GAME_ID', game_id: data.game?.id })
+            setStep(1);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function cancelEdit() {
+        dispatch({ type: 'SET_DATE', date: null })
+        dispatch({ type: 'SET_TARGET', value: '' })
+        dispatch({ type: 'SET_CATEGORIES', categories: [] })
+        dispatch({ type: 'SET_GAME_ID', game_id: null })
+        setStep(0);
     }
 
     return (
@@ -109,6 +156,7 @@ export default function CreateGame() {
                     date={date}
                     takenDates={takenDates}
                     onChange={(d) => dispatch({ type: 'SET_DATE', date: d })}
+                    editGame={editGame}
                 />
             )}
 
@@ -130,7 +178,7 @@ export default function CreateGame() {
                         className="game-create-input"
                         type="number"
                         disabled={draft?.categories?.length < 5}
-                        value={draft.targetScore}
+                        value={draft.target_score}
                         onChange={(e) => dispatch({ type: 'SET_TARGET', value: e.target.value })}
                         placeholder="Target score"
                     />
@@ -140,8 +188,11 @@ export default function CreateGame() {
             {step === 2 && <ReviewStep draft={draft} />}
 
             <div className="game-create-actions">
-                {step > 0 && !gameSubmitted && (
+                {step > 0 && !gameSubmitted && !draft?.game_id && (
                     <button className="btn-secondary large" onClick={() => setStep(step - 1)}>Back</button>
+                )}
+                {step > 0 && !gameSubmitted && draft?.game_id && (
+                    <button className="btn-secondary large" onClick={() => cancelEdit()}>Cancel Edit</button>
                 )}
                 {step < 2 &&
                     <button
@@ -150,7 +201,7 @@ export default function CreateGame() {
                         disabled={
                             step === 1 &&
                             (
-                                !draft?.targetScore ||
+                                !draft?.target_score ||
                                 draft?.categories?.length < 5 ||
                                 addingQualifier
                             )
@@ -161,7 +212,7 @@ export default function CreateGame() {
                 }
                 {step === 2 && !gameSubmitted && (
                     <button className="btn-primary large" onClick={() => submitGame()}>
-                        Create Game
+                        {draft?.game_id ? "Update Game" : "Create Game"}
                     </button>
                 )}
 
@@ -181,22 +232,22 @@ export default function CreateGame() {
 function toPayload(draft) {
     return {
         date: draft.date,
-        scoringType: draft.scoringType,
-        targetScore: draft.targetScore,
+        scoring_type: draft.scoring_type,
+        target_score: draft.target_score,
         categories: draft.categories.map((c) => ({
             type: c.type,
             value: c.value,
-            displayName: c.displayName,
+            display_name: c.display_name,
             qualifiers: c.qualifiers.map((q) => ({
                 type: q.type,
                 value: q.value,
-                isDisqualifier: q.isDisqualifier,
+                is_disqualifier: q.isDisqualifier,
             })),
         })),
     }
 }
 
-function DateStep({ date, takenDates, onChange }) {
+function DateStep({ date, takenDates, onChange, editGame }) {
     const inputRef = useRef(null)
 
     useEffect(() => {
@@ -214,6 +265,17 @@ function DateStep({ date, takenDates, onChange }) {
         <div className="game-create-field">
             <label className="game-create-label">Game Date</label>
             <input className="game-create-input" ref={inputRef} type="text" placeholder="Select a date" readOnly />
+            {takenDates?.length > 0 && (
+                <div className="game-edit-container">
+                    <ul>
+                        {takenDates.map((td) => (
+                            <li className="game-edit-button" onClick={() => editGame(td)}>
+                                <FaPencilAlt/> {td}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
         </div>
     )
 }
@@ -236,8 +298,8 @@ function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres, usi
 
             <ul className="category-list">
                 {draft.categories.map((c) => (
-                    <li className="category-item" key={c.id + '_' + c.displayName}>
-                        <span className="game-category-name">{c.displayName}</span>
+                    <li className="category-item" key={c.id + '_' + c.display_name}>
+                        <span className="game-category-name">{c.display_name}</span>
                         <button className="btn-danger" onClick={() => dispatch({ type: 'REMOVE_CATEGORY', id: c.id })}>
                             remove
                         </button>
@@ -258,7 +320,7 @@ function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres, usi
 
 function CategoryAdder({ dispatch, lastDecades, lastYears, lastGenres }) {
     const [type, setType] = useState('cast_or_crew')
-    const [pending, setPending] = useState(null) // { value, displayName }
+    const [pending, setPending] = useState(null) // { value, display_name }
 
     function add() {
         if (!pending) return
@@ -322,9 +384,9 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres, us
             categoryId: category.id,
             qualifier: {
                 type,
-                label: pending.displayName,
+                label: pending.display_name,
                 value: pending.value,
-                isDisqualifier
+                is_disqualifier: isDisqualifier
             },
         })
         clearForm();
@@ -353,8 +415,7 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres, us
                 {category.qualifiers.map((q) => (
                     <li className="qualifier-item" key={q.id}>
                         <span className="qualifier-label">
-                            {q.isDisqualifier ? 'NOT ' : ''}
-                            {q.type}: {q.label}
+                            {q.display_name ?? (q.is_disqualifier ? 'NOT ' : '') + q.type + ": " + q.label}
                         </span>
                         <button
                             className="btn-danger"
@@ -432,7 +493,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
                 onChange={(e) =>
                     onPick(
                         e.target.value
-                            ? { value: e.target.value, displayName: 'Released in ' + e.target.value }
+                            ? { value: e.target.value, display_name: 'Released in ' + e.target.value }
                             : null
                     )
                 }
@@ -455,7 +516,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
                 onChange={(e) =>
                     onPick(
                         e.target.value
-                            ? { value: e.target.value, displayName: 'Released in the ' + decadeLabel(e.target.value) }
+                            ? { value: e.target.value, display_name: 'Released in the ' + decadeLabel(e.target.value) }
                             : null
                     )
                 }
@@ -477,7 +538,7 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
                 defaultValue=""
                 onChange={(e) => {
                     const g = lastGenres.find((g) => String(g.tmdb_id) === e.target.value)
-                    onPick(g ? { value: String(g.tmdb_id), displayName: g.display_name } : null)
+                    onPick(g ? { value: String(g.tmdb_id), display_name: g.display_name } : null)
                 }}
             >
                 <option value="">select genre</option>
@@ -529,7 +590,7 @@ function PersonSearch({ onPick }) {
             <ul className="game-search-results">
                 {results.map((p) => (
                     <li className="game-search-results-items" key={p.id}>
-                        <button onClick={() => pickPerson({ value: String(p.id), displayName: p.name })}>
+                        <button onClick={() => pickPerson({ value: String(p.id), display_name: p.name })}>
                             {p.name} {p.department ? '(' + p.department + ')' : ''}
                         </button>
                         {p.last_used && <span> — {p.last_used}</span>}
@@ -554,18 +615,17 @@ function ReviewStep({ draft }) {
         <div className="review-step">
             <h2 className="game-create-title">Review</h2>
             <p>Date: {draft.date}</p>
-            <p>Target: {formatPoints(draft.targetScore)}</p>
+            <p>Target: {formatPoints(draft.target_score)}</p>
             <ul className="category-list">
                 {draft.categories.map((c) => (
                     <li className="category-item" key={c.id}>
-                        <span className="game-category-name">{c.displayName}</span>
+                        <span className="game-category-name">{c.display_name}</span>
                         {c.qualifiers.length > 0 && (
                             <ul className="qualifier-list">
                                 {c.qualifiers.map((q) => (
                                     <li className="qualifier-item" key={q.id}>
                                         <span className="qualifier-label">
-                                            {q.isDisqualifier ? 'NOT ' : ''}
-                                            {q.type}: {q.value}
+                                            {q.display_name ?? (q.is_disqualifier ? 'NOT ' : '') + q.type + ": " + q.label}
                                         </span>
                                     </li>
                                 ))}

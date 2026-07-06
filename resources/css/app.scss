@@ -983,6 +983,24 @@ button:hover {
   }
 }
 
+.game-edit {
+  &-container {
+    margin-top: 2rem;
+  }
+
+  &-button {
+    background-color: white;
+    border: 1px solid black;
+    padding: 5px;
+    color: black;
+    max-width: 9rem;
+    text-align: center;
+    & > svg {
+      font-size: .7em;
+    }
+  }
+}
+
 @media screen and (max-width: 600px){
   .grid-container {
     grid-template-columns: repeat(4, 1fr);

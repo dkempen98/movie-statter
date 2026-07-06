@@ -21,7 +21,7 @@ Route::get('/', function () {
 
     $game = Game::with('categories.qualifiers')->whereDate('date', $gameDate)->first();
     if($game === null) {
-        $game = Game::with('categories')->latest()->first();
+        $game = Game::with('categories.qualifiers')->latest()->first();
     }
 
     $guessCount =$game->guesses()->where('player_id', $player->id)->count();
@@ -100,6 +100,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/create-game/create', [GameController::class, 'create'])->name('game.create');
     Route::post('/games', [GameController::class, 'store'])->name('game.store');
+    Route::get('/game/{date}/edit', [GameController::class, 'edit'])->name('game.edit');
+    Route::put('/game/{gameId}/update', [GameController::class, 'update'])->name('game.update');
     Route::get('/tmdb/search/person', [GameController::class, 'searchPeople'])->name('tmdb.search.person');
 });
 
