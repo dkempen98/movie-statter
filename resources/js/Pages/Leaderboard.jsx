@@ -22,6 +22,7 @@ export default function Leaderboard() {
         if(!isMounting) {
             router.reload({
                 only: ['leaders'],
+                reset: ['leaders'],
                 data: { all_time: showAll },
                 preserveState: true,
                 preserveScroll: true,
