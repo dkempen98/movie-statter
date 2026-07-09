@@ -975,6 +975,34 @@ button:hover {
   & th {
     background-color: var(--search);
   }
+
+  &-tabs {
+    width: 100%;
+    display: flex;
+
+    &-child {
+      width: 50%;
+      border: solid 2px var(--highlight-border);
+      text-align: center;
+      padding: 10px;
+      
+      &:hover {
+        cursor: pointer;
+      }
+
+      &.active {
+        background-color: var(--highlight-border);
+      }
+    }
+
+    &-child:first-child {
+      border-right: solid 1px var(--highlight-border);
+    }
+
+    &-child:last-child {
+      border-right: solid 1px var(--highlight-border);
+    }
+  }
 }
 
 .game-create {

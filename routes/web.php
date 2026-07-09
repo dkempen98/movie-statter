@@ -54,6 +54,8 @@ Route::post('/guesses', [GuessController::class, 'store'])->middleware(ResolvePl
 
 Route::get('/leaderboard', function () {
     $player = request()->attributes->get('player');
+    $allTime = request()->all_time === "true";
+
 
     $timezone = request()->cookie('app_timezone') ?? request()->header('X-Timezone') ?? 'EST';
     try { new \DateTimeZone($timezone); } catch (\Exception $e) { $timezone = 'EST'; }
@@ -67,7 +69,7 @@ Route::get('/leaderboard', function () {
     }
     // TODO:: Make it so you only see following, or add option for global and following
 
-    $leaders = DB::table('guesses')
+    $leadersQuery = DB::table('guesses')
         ->join('games', 'guesses.game_id', '=', 'games.id')
         ->join('players', 'guesses.player_id', '=', 'players.id')
         ->join('users', 'players.user_id', '=', 'users.id')
@@ -79,9 +81,13 @@ Route::get('/leaderboard', function () {
             DB::raw('SUM(guesses.correct) AS right_answers'),
             DB::raw('SUM(CASE WHEN guesses.tmdb_movie_id = 0 THEN 1 ELSE 0 END) AS gave_up'),
         )
-        ->whereNotNull('games.target_score')
-        ->where('games.id', $game->id)
-        ->groupBy('guesses.player_id', 'guesses.game_id')
+        ->whereNotNull('games.target_score');
+
+    if(!$allTime) {
+        $leadersQuery->where('games.id', $game->id);
+    }
+
+    $leaders = $leadersQuery->groupBy('guesses.player_id', 'guesses.game_id')
         ->having('right_answers', '=', 5)
         ->orderByRaw('ABS(closest)')
         ->limit(25)

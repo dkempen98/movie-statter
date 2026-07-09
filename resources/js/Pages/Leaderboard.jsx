@@ -1,11 +1,15 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import { FaMinusCircle } from "react-icons/fa";
+import {useEffect, useState} from "react";
 
 export default function Leaderboard() {
     const { leaders, game } = usePage().props;
 
     const trueLeaders = leaders?.filter((leader) => !Number(leader.gave_up))
     const gaveUp = leaders?.filter((leader) => Number(leader.gave_up))
+
+    const [showAll, setShowAll] = useState(false)
+    const [isMounting, setIsMounting] = useState(true)
 
     function formatPoints(points) {
         if (game?.is_currency) {
@@ -14,11 +18,37 @@ export default function Leaderboard() {
         return points;
     }
 
+    useEffect(() => {
+        if(!isMounting) {
+            router.reload({
+                only: ['leaders'],
+                data: { all_time: showAll },
+                preserveState: true,
+                preserveScroll: true,
+            });
+        } else {
+            setIsMounting(false);
+        }
+    }, [showAll]);
+
     return (
         <div className="leaderboard-container">
             <Head title="Leaderboard" />
             <h1>Leaderboard</h1>
-            <p>Today's Top Scorers</p>
+            <div className="leaderboard-tabs">
+                <p
+                    className={showAll ? 'leaderboard-tabs-child' : 'leaderboard-tabs-child active'}
+                    onClick={() => setShowAll(false)}
+                >
+                    Today
+                </p>
+                <p
+                    className={showAll ? 'leaderboard-tabs-child active' : 'leaderboard-tabs-child'}
+                    onClick={() => setShowAll(true)}
+                >
+                    All Time
+                </p>
+            </div>
 
             <table className="leaderboard">
                 <thead>
