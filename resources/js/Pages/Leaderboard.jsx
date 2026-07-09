@@ -3,13 +3,12 @@ import { FaMinusCircle } from "react-icons/fa";
 import {useEffect, useState} from "react";
 
 export default function Leaderboard() {
-    const { leaders, game } = usePage().props;
+    const { leaders, game, allTimeLeaders } = usePage().props;
 
     const trueLeaders = leaders?.filter((leader) => !Number(leader.gave_up))
     const gaveUp = leaders?.filter((leader) => Number(leader.gave_up))
 
     const [showAll, setShowAll] = useState(false)
-    const [isMounting, setIsMounting] = useState(true)
 
     function formatPoints(points) {
         if (game?.is_currency) {
@@ -18,19 +17,6 @@ export default function Leaderboard() {
         return points;
     }
 
-    useEffect(() => {
-        if(!isMounting) {
-            router.reload({
-                only: ['leaders'],
-                reset: ['leaders'],
-                data: { all_time: showAll },
-                preserveState: true,
-                preserveScroll: true,
-            });
-        } else {
-            setIsMounting(false);
-        }
-    }, [showAll]);
 
     return (
         <div className="leaderboard-container">
@@ -65,22 +51,38 @@ export default function Leaderboard() {
                             <td colSpan={3}>No scores yet.</td>
                         </tr>
                     )}
-                    {[...trueLeaders].map((leader, i) => (
-                            <tr key={leader.player_id} className={`leaderboard-${i % 2 === 0 ? 'even' : 'odd'}`}>
-                                <td>{i + 1}</td>
-                                <td>{leader.name}</td>
-                                <td>{formatPoints(leader.closest)}</td>
-                            </tr>
-                        )
-                    )}
-                    {[...gaveUp].map((leader, i) => (
-                                <tr key={leader.player_id} className={`leaderboard-${(i + trueLeaders?.length) % 2 === 0 ? 'even' : 'odd'}`}>
-                                    <td>{i + trueLeaders?.length + 1}</td>
-                                    <td style={{display: "flex", gap: ".5em"}}>
-                                        <FaMinusCircle style={{color: "red"}}/> {leader.name}</td>
+                    {showAll && (
+                        <>
+                            {[...allTimeLeaders].map((leader, i) => (
+                                <tr key={leader.player_id} className={`leaderboard-${i % 2 === 0 ? 'even' : 'odd'}`}>
+                                    <td>{i + 1}</td>
+                                    <td>{leader.name}</td>
                                     <td>{formatPoints(leader.closest)}</td>
                                 </tr>
-                            )
+                                )
+                            )}
+                        </>
+                    )}
+                    {!showAll && (
+                        <>
+                            {[...trueLeaders].map((leader, i) => (
+                                    <tr key={leader.player_id} className={`leaderboard-${i % 2 === 0 ? 'even' : 'odd'}`}>
+                                        <td>{i + 1}</td>
+                                        <td>{leader.name}</td>
+                                        <td>{formatPoints(leader.closest)}</td>
+                                    </tr>
+                                )
+                            )}
+                            {[...gaveUp].map((leader, i) => (
+                                        <tr key={leader.player_id} className={`leaderboard-${(i + trueLeaders?.length) % 2 === 0 ? 'even' : 'odd'}`}>
+                                            <td>{i + trueLeaders?.length + 1}</td>
+                                            <td style={{display: "flex", gap: ".5em"}}>
+                                                <FaMinusCircle style={{color: "red"}}/> {leader.name}</td>
+                                            <td>{formatPoints(leader.closest)}</td>
+                                        </tr>
+                                    )
+                            )}
+                        </>
                     )}
                 </tbody>
             </table>

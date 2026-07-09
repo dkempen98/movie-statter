@@ -54,7 +54,6 @@ Route::post('/guesses', [GuessController::class, 'store'])->middleware(ResolvePl
 
 Route::get('/leaderboard', function () {
     $player = request()->attributes->get('player');
-    $allTime = request()->all_time === "true";
 
 
     $timezone = request()->cookie('app_timezone') ?? request()->header('X-Timezone') ?? 'EST';
@@ -81,21 +80,20 @@ Route::get('/leaderboard', function () {
             DB::raw('SUM(guesses.correct) AS right_answers'),
             DB::raw('SUM(CASE WHEN guesses.tmdb_movie_id = 0 THEN 1 ELSE 0 END) AS gave_up'),
         )
-        ->whereNotNull('games.target_score');
-
-    if(!$allTime) {
-        $leadersQuery->where('games.id', $game->id);
-    }
-
-    $leaders = $leadersQuery->groupBy('guesses.player_id', 'guesses.game_id')
+        ->whereNotNull('games.target_score')
+        ->groupBy('guesses.player_id', 'guesses.game_id')
         ->having('right_answers', '=', 5)
         ->orderByRaw('ABS(closest)')
-        ->limit(25)
-        ->get();
+        ->limit(25);
+
+    $allTimeLeaders = $leadersQuery->clone()->get();
+
+    $leaders = $leadersQuery->where('games.id', $game->id)->get();
 
     return Inertia::render('Leaderboard', [
         'leaders' => $leaders,
         'game' => $game,
+        'allTimeLeaders' => $allTimeLeaders,
     ]);
 })->name('leaderboard');
 
