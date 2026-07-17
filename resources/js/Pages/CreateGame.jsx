@@ -241,7 +241,7 @@ function toPayload(draft) {
             qualifiers: c.qualifiers.map((q) => ({
                 type: q.type,
                 value: q.value,
-                is_disqualifier: q.isDisqualifier,
+                is_disqualifier: q.is_disqualifier,
             })),
         })),
     }
