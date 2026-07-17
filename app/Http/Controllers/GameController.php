@@ -8,6 +8,8 @@ use App\Models\Category;
 use App\Models\CategoryQualifiers;
 use App\Models\Game;
 use App\Models\Genre;
+use App\Models\Keyword;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -38,6 +40,8 @@ class GameController extends Controller
             $date->addDay();
         }
 
+        $futureGameIds = Game::query()->where('date', '>', $date)->get()->pluck('id');
+
         $decades = [
             '2020-2029',
             '2010-2019',
@@ -49,61 +53,148 @@ class GameController extends Controller
 
         $lastDecades = [];
         foreach ($decades as $decade) {
-            $lastTime = Category::where('type', CategoryType::YearRange->value)
+            $lastCategory = Category::where('type', CategoryType::YearRange->value)
                 ->where('value', $decade)
                 ->with('game')
                 ->orderByDesc(
                     \DB::table('games')
                         ->select('date')
                         ->whereColumn('games.id', 'categories.game_id')
+                        ->whereNotIn('games.id', $futureGameIds)
                         ->limit(1)
                 )
                 ->first();
+
+            $lastQualifier = CategoryQualifiers::where('type', CategoryType::YearRange->value)
+                ->where('value', $decade)
+                ->with('category.game')
+                ->orderByDesc(
+                    \DB::table('games')
+                        ->select('date')
+                        ->join('categories', 'category_qualifiers.category_id', '=', 'categories.id')
+                        ->whereColumn('games.id', 'categories.game_id')
+                        ->whereNotIn('games.id', $futureGameIds)
+                        ->limit(1)
+                )
+                ->first();
+
+            $lastTime = max($lastCategory?->game?->date, $lastQualifier?->category?->game?->date);
+
             $lastDecades[] = [
                 'decade' => $decade,
-                'last' => $lastTime?->game?->date,
+                'last' => $lastTime,
             ];
         }
 
         $years = collect(range(2026, 1980));
         $lastYears = [];
         foreach ($years as $year) {
-            $lastTime = Category::where('type', CategoryType::Year->value)
+            $lastCategory = Category::where('type', CategoryType::Year->value)
                 ->where('value', $year)
                 ->with('game')
                 ->orderByDesc(
                     \DB::table('games')
                         ->select('date')
                         ->whereColumn('games.id', 'categories.game_id')
+                        ->whereNotIn('games.id', $futureGameIds)
                         ->limit(1)
                 )
                 ->first();
+
+            $lastQualifier = CategoryQualifiers::where('type', CategoryType::Year->value)
+                ->where('value', $year)
+                ->with('category.game')
+                ->orderByDesc(
+                    \DB::table('games')
+                        ->select('date')
+                        ->join('categories', 'category_qualifiers.category_id', '=', 'categories.id')
+                        ->whereColumn('games.id', 'categories.game_id')
+                        ->whereNotIn('games.id', $futureGameIds)
+                        ->limit(1)
+                )
+                ->first();
+
+            $lastTime = max($lastCategory?->game?->date, $lastQualifier?->category?->game?->date);
+
             $lastYears[] = [
                 'year' => $year,
-                'last' => $lastTime?->game?->date,
+                'last' => $lastTime,
             ];
         }
 
         $genres = Genre::where('active', '=', 1)->get();
         $lastGenres = [];
         foreach ($genres as $genre) {
-            $lastTime = Category::where('type', CategoryType::Genre->value)
+            $lastCategory = Category::where('type', CategoryType::Genre->value)
                 ->where('value', $genre->tmdb_id)
                 ->with('game')
                 ->orderByDesc(
                     \DB::table('games')
                         ->select('date')
                         ->whereColumn('games.id', 'categories.game_id')
+                        ->whereNotIn('games.id', $futureGameIds)
                         ->limit(1)
                 )
                 ->first();
+
+            $lastQualifier = CategoryQualifiers::where('type', CategoryType::Genre->value)
+                ->where('value', $genre->tmdb_id)
+                ->with('category.game')
+                ->orderByDesc(
+                    \DB::table('games')
+                        ->select('date')
+                        ->join('categories', 'category_qualifiers.category_id', '=', 'categories.id')
+                        ->whereColumn('games.id', 'categories.game_id')
+                        ->whereNotIn('games.id', $futureGameIds)
+                        ->limit(1)
+                )
+                ->first();
+
+            $lastTime = max($lastCategory?->game?->date, $lastQualifier?->category?->game?->date);
+
             $lastGenres[] = [
                 'tmdb_id' => $genre->tmdb_id,
                 'display_name' => $genre->display_name,
-                'last' => $lastTime?->game?->date,
+                'last' => $lastTime,
             ];
         }
 
+        $keywords = Keyword::where('active', '=', 1)->get();
+        $lastKeywords = [];
+        foreach ($keywords as $keyword) {
+            $lastCategory = Category::where('type', CategoryType::Keyword->value)
+                ->where('value', $keyword->tmdb_id)
+                ->with('game')
+                ->orderByDesc(
+                    \DB::table('games')
+                        ->select('date')
+                        ->whereColumn('games.id', 'categories.game_id')
+                        ->whereNotIn('games.id', $futureGameIds)
+                        ->limit(1)
+                )
+                ->first();
+            $lastQualifier = CategoryQualifiers::where('type', CategoryType::Keyword->value)
+                ->where('value', $keyword->tmdb_id)
+                ->with('category.game')
+                ->orderByDesc(
+                    \DB::table('games')
+                        ->select('date')
+                        ->join('categories', 'category_qualifiers.category_id', '=', 'categories.id')
+                        ->whereColumn('games.id', 'categories.game_id')
+                        ->whereNotIn('games.id', $futureGameIds)
+                        ->limit(1)
+                )
+                ->first();
+
+            $lastTime = max($lastCategory?->game?->date, $lastQualifier?->category?->game?->date);
+
+
+            $lastKeywords[] = [
+                'tmdb_id' => $keyword->tmdb_id,
+                'display_name' => $keyword->label,
+                'last' => $lastTime,
+            ];
+        }
 
         return Inertia::render('CreateGame', [
             'takenDates' => $takenDates,
@@ -114,6 +205,8 @@ class GameController extends Controller
             'lastYears' => $lastYears,
             'genres' => $genres,
             'lastGenres' => $lastGenres,
+            'keywords' => $keywords,
+            'lastKeywords' => $lastKeywords,
         ]);
     }
 

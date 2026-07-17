@@ -12,6 +12,7 @@ enum CategoryType: string
     case YearRange = 'year_range';
 
     case Genre = 'genre';
+    case Keyword = 'keyword';
 
     public function label(): string
     {
@@ -21,6 +22,7 @@ enum CategoryType: string
             self::Director => 'Directed By',
             self::Year, self::YearRange => 'Release Date',
             self::Genre => 'Film Genre',
+            self::Keyword => 'Keyword',
         };
     }
 
@@ -33,6 +35,7 @@ enum CategoryType: string
             self::Year, => 'Released in $target',
             self::YearRange => 'Released in the $target',
             self::Genre => 'In the $target Genre',
+            self::Keyword => '$target',
         };
     }
 
@@ -45,6 +48,7 @@ enum CategoryType: string
             self::Year, => 'Not Released in $target',
             self::YearRange => 'Not Released in the $target',
             self::Genre => 'Not in the $target Genre',
+            self::Keyword => 'Not a $target',
         };
     }
 
@@ -56,6 +60,7 @@ enum CategoryType: string
                 self::Year,
                 self::YearRange,
                 self::Genre,
+                self::Keyword,
             ]
         );
     }

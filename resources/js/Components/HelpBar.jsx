@@ -34,6 +34,7 @@ export default function HelpBar() {
                             <h2>About</h2>
                             <p>Hit the Marquee was created by an independent developer using the <a href="https://developer.themoviedb.org/docs">TMDB API</a></p>
                             <p>This is a work in progress</p>
+                            <p>Think something is wrong? Since all of the data is supplied by TMDB, you can correct it! <a href="https://themoviedb.org">Go to their site</a>, log in or create an account and edit the info for that movie. Be sure to <a href="https://www.themoviedb.org/bible?language=en-US">review their guidelines</a> before making any changes.</p>
                         </div>
                         <div className="modal-close" onClick={() => setHelpModal(false)}>X</div>
                     </div>

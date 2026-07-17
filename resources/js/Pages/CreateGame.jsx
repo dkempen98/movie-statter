@@ -10,6 +10,7 @@ const CATEGORY_TYPES = [
     { value: 'year', label: 'Year' },
     { value: 'year_range', label: 'Decade' },
     { value: 'genre', label: 'Genre' },
+    { value: 'keyword', label: 'Keyword' },
 ]
 
 const QUALIFIER_TYPES = ['year', 'year_range', 'genre']
@@ -104,7 +105,7 @@ function reducer(draft, action) {
 
 
 export default function CreateGame() {
-    const { takenDates, date, lastDecades, lastYears, lastGenres } = usePage().props
+    const { takenDates, date, lastDecades, lastYears, lastGenres, lastKeywords } = usePage().props
 
     const [draft, dispatch] = useReducer(reducer, { ...initialDraft, date })
     const [step, setStep] = useState(0)
@@ -167,6 +168,7 @@ export default function CreateGame() {
                     lastDecades={lastDecades}
                     lastYears={lastYears}
                     lastGenres={lastGenres}
+                    lastKeywords={lastKeywords}
                     usingQualifier={setAddingQualifier}
                 />
             )}
@@ -280,7 +282,7 @@ function DateStep({ date, takenDates, onChange, editGame }) {
     )
 }
 
-function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres, usingQualifier }) {
+function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres, lastKeywords, usingQualifier }) {
     return (
         <div className="category-step">
             <h2 className="game-create-title">
@@ -293,6 +295,7 @@ function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres, usi
                     lastDecades={lastDecades}
                     lastYears={lastYears}
                     lastGenres={lastGenres}
+                    lastKeywords={lastKeywords}
                 />
             )}
 
@@ -309,6 +312,7 @@ function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres, usi
                             lastDecades={lastDecades}
                             lastYears={lastYears}
                             lastGenres={lastGenres}
+                            lastKeywords={lastKeywords}
                             usingQualifier={usingQualifier}
                         />
                     </li>
@@ -318,7 +322,7 @@ function CategoryStep({ draft, dispatch, lastDecades, lastYears, lastGenres, usi
     )
 }
 
-function CategoryAdder({ dispatch, lastDecades, lastYears, lastGenres }) {
+function CategoryAdder({ dispatch, lastDecades, lastYears, lastGenres, lastKeywords }) {
     const [type, setType] = useState('cast_or_crew')
     const [pending, setPending] = useState(null) // { value, display_name }
 
@@ -357,6 +361,7 @@ function CategoryAdder({ dispatch, lastDecades, lastYears, lastGenres }) {
                 lastDecades={lastDecades}
                 lastYears={lastYears}
                 lastGenres={lastGenres}
+                lastKeywords={lastKeywords}
                 onPick={setPending}
             />
 
@@ -369,7 +374,7 @@ function CategoryAdder({ dispatch, lastDecades, lastYears, lastGenres }) {
     )
 }
 
-function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres, usingQualifier }) {
+function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres, lastKeywords, usingQualifier }) {
     const [type, setType] = useState(null)
     const [isDisqualifier, setIsDisqualifier] = useState(false)
     const [pending, setPending] = useState(null)
@@ -464,6 +469,7 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres, us
                         lastDecades={lastDecades}
                         lastYears={lastYears}
                         lastGenres={lastGenres}
+                        lastKeywords={lastKeywords}
                         onPick={setPending}
                     />
                     <div className="game-create-actions">
@@ -480,7 +486,7 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres, us
     )
 }
 
-function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
+function ValueInput({ type, lastDecades, lastYears, lastGenres, lastKeywords, onPick }) {
     if (type === 'cast_or_crew') {
         return <PersonSearch onPick={onPick} />
     }
@@ -545,6 +551,26 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, onPick }) {
                 {lastGenres.map((g) => (
                     <option key={g.tmdb_id} value={g.tmdb_id}>
                         {g.display_name} {g.last ? '- ' + g.last : ''}
+                    </option>
+                ))}
+            </select>
+        )
+    }
+
+    if (type === 'keyword') {
+        return (
+            <select
+                className="game-create-input"
+                defaultValue=""
+                onChange={(e) => {
+                    const k = lastKeywords.find((k) => String(k.tmdb_id) === e.target.value)
+                    onPick(k ? { value: String(k.tmdb_id), display_name: k.display_name } : null)
+                }}
+            >
+                <option value="">select keyword</option>
+                {lastKeywords.map((k) => (
+                    <option key={k.tmdb_id} value={k.tmdb_id}>
+                        {k.display_name} {k.last ? '- ' + k.last : ''}
                     </option>
                 ))}
             </select>

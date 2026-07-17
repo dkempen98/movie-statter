@@ -40,7 +40,7 @@ export default function Navbar() {
                     {user ? (
                         <div className="navbar-user">
                             { user.is_admin === 1 && (
-                                <Link href={route('game.create')} onClick={() => setMenuOpen(false)}>Create Game</Link>
+                                <Link href={route('game.create')} onClick={() => setMenuOpen(false)}>Create</Link>
                             )}
                             <Link href={route('profile.edit')} onClick={() => setMenuOpen(false)}>Profile</Link>
                             <Link className="logout" href={route('logout')} method="post" onClick={() => setMenuOpen(false)}>

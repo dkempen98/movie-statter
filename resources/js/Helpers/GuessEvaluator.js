@@ -1,4 +1,4 @@
-import {movieCredits, movieDetails} from "@/Helpers/tmdb_api.js";
+import {movieCredits, movieDetails, movieKeywords} from "@/Helpers/tmdb_api.js";
 import {router} from "@inertiajs/react";
 import {movieAwards} from "@/Helpers/omdb_api.js";
 
@@ -74,9 +74,23 @@ export async function evaluateGuess(movie, category, game) {
         return right !== disqualifier;
     }
 
+    async function checkKeywordGuess(value, disqualifier) {
+        const keywordData = await movieKeywords(movie.id)
+        console.log(category);
+        const keywordIds = keywordData?.keywords?.map(a => a.id);
+        let right = keywordIds?.includes(Number(value), false);
+        if(!right && !disqualifier) {
+            wrongString = movie.title + ' is not a ' + category.display_name + '!';
+        } else if (right && disqualifier) {
+            wrongString = movie.title + ' is a ' + category.display_name + '!';
+        }
+        return right !== disqualifier;
+    }
+
     let correct = false;
 
     async function checkItem(type, value = category.value, disqualifier = false) {
+        console.log(type);
         switch(type) {
             case 'cast_or_crew': {
                 //TODO:: break this up for cast + type / crew / cast and crew
@@ -90,6 +104,9 @@ export async function evaluateGuess(movie, category, game) {
             }
             case 'genre': {
                 return await checkGenreGuess(value, disqualifier);
+            }
+            case 'keyword': {
+                return await checkKeywordGuess(value, disqualifier);
             }
         }
     }
