@@ -264,6 +264,7 @@ class GameController extends Controller
     {
         return match ($type) {
             CategoryType::Genre => Genre::where('tmdb_id', $value)->value('display_name') ?? (string) $value,
+            CategoryType::Keyword => Keyword::where('tmdb_id', $value)->value('label') ?? (string) $value,
             CategoryType::YearRange => $value[0] === '2'
                 ? substr($value, 0, 4) . "'s"
                 : substr($value, 2, 2) . "'s",

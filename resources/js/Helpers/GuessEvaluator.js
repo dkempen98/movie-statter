@@ -74,23 +74,21 @@ export async function evaluateGuess(movie, category, game) {
         return right !== disqualifier;
     }
 
-    async function checkKeywordGuess(value, disqualifier) {
+    async function checkKeywordGuess(value, disqualifier, label) {
         const keywordData = await movieKeywords(movie.id)
-        console.log(category);
         const keywordIds = keywordData?.keywords?.map(a => a.id);
         let right = keywordIds?.includes(Number(value), false);
         if(!right && !disqualifier) {
-            wrongString = movie.title + ' is not a ' + category.display_name + '!';
+            wrongString = movie.title + ' does not fit "' + label + '"!';
         } else if (right && disqualifier) {
-            wrongString = movie.title + ' is a ' + category.display_name + '!';
+            wrongString = movie.title + ' fits "' + label + '"!';
         }
         return right !== disqualifier;
     }
 
     let correct = false;
 
-    async function checkItem(type, value = category.value, disqualifier = false) {
-        console.log(type);
+    async function checkItem(type, item, value = category.value, disqualifier = false) {
         switch(type) {
             case 'cast_or_crew': {
                 //TODO:: break this up for cast + type / crew / cast and crew
@@ -106,17 +104,17 @@ export async function evaluateGuess(movie, category, game) {
                 return await checkGenreGuess(value, disqualifier);
             }
             case 'keyword': {
-                return await checkKeywordGuess(value, disqualifier);
+                return await checkKeywordGuess(value, disqualifier, item?.display_name);
             }
         }
     }
 
-    correct = await checkItem(category.type);
+    correct = await checkItem(category.type, category);
 
     if (correct) {
         for (const qualifier of category.qualifiers ?? []) {
             if(correct) {
-                correct = await checkItem(qualifier.type, qualifier.value, qualifier.is_disqualifier);
+                correct = await checkItem(qualifier.type, qualifier, qualifier.value, qualifier.is_disqualifier);
             }
         }
     }
