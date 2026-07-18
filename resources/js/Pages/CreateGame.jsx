@@ -13,7 +13,7 @@ const CATEGORY_TYPES = [
     { value: 'keyword', label: 'Keyword' },
 ]
 
-const QUALIFIER_TYPES = ['year', 'year_range', 'genre']
+const QUALIFIER_TYPES = ['year', 'year_range', 'genre', 'keyword']
 const MAX_CATEGORIES = 5
 
 let idCounter = 0
