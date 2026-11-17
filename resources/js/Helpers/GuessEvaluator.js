@@ -86,6 +86,27 @@ export async function evaluateGuess(movie, category, game) {
         return right !== disqualifier;
     }
 
+    async function checkTextGuess(value, disqualifier, startsWith = false) {
+        let right = false;
+        if(startsWith) {
+            right = movie.title?.toLowerCase().startsWith(value.toLowerCase());
+            if(!right) {
+                let title = movie.title?.toLowerCase();
+                if(title.startsWith("the ")) {
+                    right = title.replace("the ", "").startsWith(value.toLowerCase())
+                }
+            }
+        } else {
+            right = movie.title?.toLowerCase().includes(value.toLowerCase());
+        }
+        if(!right && !disqualifier) {
+            wrongString = movie.title + ' Does Not ' + (startsWith ? 'Start With ' : 'Contain ') + value +', Try Again!';
+        } else if (right && disqualifier) {
+            wrongString = movie.title + (startsWith ? 'Starts With ' : 'Contains ') + value +', Try Again!';
+        }
+        return right !== disqualifier;
+    }
+
     let correct = false;
 
     async function checkItem(type, item, value = category.value, disqualifier = false) {
@@ -105,6 +126,12 @@ export async function evaluateGuess(movie, category, game) {
             }
             case 'keyword': {
                 return await checkKeywordGuess(value, disqualifier, item?.display_name);
+            }
+            case 'starts_with': {
+                return await checkTextGuess(value, disqualifier, true);
+            }
+            case 'contains': {
+                return await checkTextGuess(value, disqualifier, false);
             }
         }
     }

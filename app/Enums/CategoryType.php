@@ -14,6 +14,9 @@ enum CategoryType: string
     case Genre = 'genre';
     case Keyword = 'keyword';
 
+    case Contains = 'contains';
+    case StartsWith = 'starts_with';
+
     public function label(): string
     {
         return match($this) {
@@ -23,6 +26,8 @@ enum CategoryType: string
             self::Year, self::YearRange => 'Release Date',
             self::Genre => 'Film Genre',
             self::Keyword => 'Keyword',
+            self::Contains => 'Contains',
+            self::StartsWith => 'Starts With',
         };
     }
 
@@ -36,6 +41,8 @@ enum CategoryType: string
             self::YearRange => 'Released in the $target',
             self::Genre => 'In the $target Genre',
             self::Keyword => '$target',
+            self::Contains => 'Title Contains "$target"',
+            self::StartsWith => 'Title Starts With "$target"'
         };
     }
 
@@ -49,6 +56,8 @@ enum CategoryType: string
             self::YearRange => 'Not Released in the $target',
             self::Genre => 'Not in the $target Genre',
             self::Keyword => 'Not a $target',
+            self::Contains => 'Title Does Not Contain "$target"',
+            self::StartsWith => 'Title Does Not Start With "$target"'
         };
     }
 
@@ -61,6 +70,8 @@ enum CategoryType: string
                 self::YearRange,
                 self::Genre,
                 self::Keyword,
+                self::Contains,
+                self::StartsWith,
             ]
         );
     }

@@ -11,9 +11,11 @@ const CATEGORY_TYPES = [
     { value: 'year_range', label: 'Decade' },
     { value: 'genre', label: 'Genre' },
     { value: 'keyword', label: 'Keyword' },
+    { value: 'contains', label: 'Contains Text' },
+    { value: 'starts_with', label: 'Starts With Text' },
 ]
 
-const QUALIFIER_TYPES = ['year', 'year_range', 'genre', 'keyword']
+const QUALIFIER_TYPES = ['year', 'year_range', 'genre', 'keyword', 'contains', 'starts_with']
 const MAX_CATEGORIES = 5
 
 let idCounter = 0
@@ -22,6 +24,13 @@ const yearBased = (t) => t === 'year' || t === 'year_range'
 const decadeLabel = (d) => d.slice(0, 4) + 's'
 
 function eligibleQualifierTypes(categoryType) {
+    let canHaveSelfAsQualifier = ['contains', 'cast_or_crew', 'genre', 'keyword']
+    if(canHaveSelfAsQualifier.includes(categoryType)) {
+        return QUALIFIER_TYPES.filter(
+            (t) => !(yearBased(t) && yearBased(categoryType))
+        )
+    }
+
     return QUALIFIER_TYPES.filter(
         (t) => t !== categoryType && !(yearBased(t) && yearBased(categoryType))
     )
@@ -390,7 +399,7 @@ function Qualifiers({ category, dispatch, lastDecades, lastYears, lastGenres, la
             qualifier: {
                 type,
                 label: pending.display_name,
-                value: pending.value,
+                value: (pending.value),
                 is_disqualifier: isDisqualifier
             },
         })
@@ -574,6 +583,48 @@ function ValueInput({ type, lastDecades, lastYears, lastGenres, lastKeywords, on
                     </option>
                 ))}
             </select>
+        )
+    }
+
+    if (type === 'contains') {
+        const [input, setInput] = useState('');
+
+        function inputChange(value) {
+            setInput(value);
+            onPick({ value: value, display_name: 'Title Contains "' + value + '"'})
+        }
+
+        return (
+            <div>
+                <input
+                    className="game-create-input"
+                    type="text"
+                    value={input}
+                    onChange={(e) => inputChange(e.target.value)}
+                    placeholder="Contains..."
+                />
+            </div>
+        )
+    }
+
+    if (type === 'starts_with') {
+        const [input, setInput] = useState('');
+
+        function inputChange(value) {
+            setInput(value);
+            onPick({ value: value, display_name: 'Title Starts With "' + value + '"'})
+        }
+
+        return (
+            <div>
+                <input
+                    className="game-create-input"
+                    type="text"
+                    value={input}
+                    onChange={(e) => inputChange(e.target.value)}
+                    placeholder="Starts With..."
+                />
+            </div>
         )
     }
 
